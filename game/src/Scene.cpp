@@ -1999,7 +1999,7 @@ static JSValue js_set_node_scale (JSContext *ctx, JSValueConst , int argc, JSVal
 
 static JSValue js_set_model_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
         return JS_ThrowReferenceError(ctx, "set_model_texture: Wrong number of arguments(modelIndex,materialIndex, textureIndex)");
     }
@@ -2534,7 +2534,7 @@ static JSValue js_canvas_set_texture (JSContext *ctx, JSValueConst , int argc, J
 
 static JSValue js_canvas_draw_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
 {
-    if (argc != 1)
+    if (argc != 5)
     {
         return JS_ThrowReferenceError(ctx, "draw_texture: Wrong number of arguments(textureIndex,x,y,w,h)");
     }

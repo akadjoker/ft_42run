@@ -143,7 +143,7 @@ static  JSValue js_assets_load_texture(JSContext* ctx, JSValueConst this_val, in
           JS_ThrowReferenceError(ctx, "load_texture: fail load texture (%s)", fileName);
     } else 
     {
-        result = TextureManager::Instance().GetTotalTextures();
+        result = TextureManager::Instance().GetTotalTextures()-1;
     }
     
     JS_FreeCString(ctx, fileName);
@@ -190,3 +190,4 @@ inline void RegisterAssetsFunctions(JSContext* ctx, JSValue global_obj)
     }
     JS_SetPropertyStr(ctx, global_obj, "assets", core);
 }
+

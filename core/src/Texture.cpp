@@ -1000,6 +1000,7 @@ void TextureManager::Init()
        // unsigned char pixels[4] = {         255, 255, 255, 255      }; 
         Pixmap image(256, 256, 1,checker_data);
         m_defaultTexture->Load(image);
+        m_loadedTextures.push_back(m_defaultTexture);
 
 }
 
@@ -1235,11 +1236,13 @@ bool TextureManager::LoadTexture(const char *name)
         Texture2D *texture = new Texture2D();
         if (texture->Load(path.c_str()))
         {
+            //LogInfo("TextureManager: Get Texture: %s", path.c_str());
             m_textures.emplace (path.c_str(),texture);
-            m_loadedTextures.push_back(it->second);
+            m_loadedTextures.push_back(texture);
             return true;
         } else 
         {
+           // LogWarning("TextureManager: Texture not found: %s", name);
             texture->Drop();
         }
     }

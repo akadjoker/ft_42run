@@ -48,6 +48,44 @@ std::string readFile(const std::string& filePath)
     return buffer.str();
 }
 
+static  JSValue js_include(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    if (argc != 1) 
+    {
+        return JS_ThrowReferenceError(ctx, "include: Wrong number of arguments (filename)");
+    }
+    const char* filename = JS_ToCString(ctx, argv[0]);
+   
+    if (System::Instance().FileExists(filename))
+    {
+        std::string script = readFile(filename);
+        execute(ctx, script.c_str(), System::Instance().GetFileNameWithoutExt(filename));
+    } else 
+    {
+        Logger::Instance().Error("File not found: %s", filename);
+
+    }
+
+
+    return JS_NULL;
+}
+
+
+JSFunctionMap globalFunctions = 
+{
+    {"include", js_include},
+};
+
+inline void RegisterGlobalFunctions(JSContext* ctx, JSValue global_obj) 
+{
+    JSValue core = JS_NewObject(ctx);
+    for (const auto& func : globalFunctions) 
+    {
+        JS_SetPropertyStr(ctx, core, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
+    }
+}
+
+
 int main()
 {
 
@@ -89,7 +127,7 @@ int main()
 
     scene.Init();
 
-
+    RegisterGlobalFunctions(ctx, global_obj);
     RegisterKeyboardFunctions(ctx, global_obj);
     RegisterMouseFunctions(ctx, global_obj);
     RegisterAssetsFunctions(ctx, global_obj);
