@@ -1820,7 +1820,7 @@ static JSValue js_scene_create_pane(JSContext *ctx, JSValueConst , int argc, JSV
         JS_ToInt32(ctx, &tilesY,argv[3]);
    } else 
    {
-    return JS_ThrowReferenceError(ctx, "create_pane: Wrong number of arguments(stacks,slices,tilesX,tilesY [uvTileX,uvTileY])");
+    return JS_ThrowReferenceError(ctx, "create_plane: Wrong number of arguments(stacks,slices,tilesX,tilesY [uvTileX,uvTileY])");
    }
    Scene::Instance().CreatePlane(stacks,slices,tilesX,tilesY,uvTileX,uvTileY);
 
@@ -2001,11 +2001,12 @@ static JSValue js_set_model_texture (JSContext *ctx, JSValueConst , int argc, JS
 {
     if (argc != 2)
     {
-        return JS_ThrowReferenceError(ctx, "set_model_texture: Wrong number of arguments(modelIndex, textureIndex)");
+        return JS_ThrowReferenceError(ctx, "set_model_texture: Wrong number of arguments(modelIndex,materialIndex, textureIndex)");
     }
     int modelIndex, textureIndex,materilaIndex;
     JS_ToInt32(ctx, &modelIndex,argv[0]);
     JS_ToInt32(ctx, &materilaIndex,argv[1]);
+    JS_ToInt32(ctx, &textureIndex,argv[2]);
 
     Model *model = Scene::Instance().GetModel(modelIndex);
     if (model)
@@ -2201,7 +2202,7 @@ static JSValue js_model_update_smoth_normals (JSContext *ctx, JSValueConst , int
 {
     if (argc != 1)
     {
-        return JS_ThrowReferenceError(ctx, "model_update_normals: Wrong number of arguments(modelIndex,mesh,angleWeighted)");
+        return JS_ThrowReferenceError(ctx, "model_update_smoth_normals: Wrong number of arguments(modelIndex,mesh,angleWeighted)");
     }
     int modelIndex;
     int mesh;
@@ -2225,12 +2226,12 @@ static JSValue js_model_update_smoth_normals (JSContext *ctx, JSValueConst , int
 
         } else 
         {
-            JS_ThrowReferenceError(ctx, "model_update_normals: mesh [%d] not found",mesh);
+            JS_ThrowReferenceError(ctx, "model_update_smoth_normals: mesh [%d] not found",mesh);
         }
 
     } else 
     {
-         JS_ThrowReferenceError(ctx, "model_update_normals: model [%d] not found",modelIndex);
+         JS_ThrowReferenceError(ctx, "model_update_smoth_normals: model [%d] not found",modelIndex);
     }
   
     
@@ -2314,6 +2315,10 @@ JSFunctionMap sceneFunctions =
     {"entity_add_animation", js_entity_add_animation},
     {"entity_play", js_entity_play_animation},
 
+    {"set_model_texture", js_set_model_texture},
+    {"set_model_culling", js_set_model_culling},
+
+
 
 
 
@@ -2341,16 +2346,7 @@ JSFunctionMap sceneFunctions =
 };
 
 
-/*
-   
 
-
-    void Cube(const Vec3 &position, float width, float height, float depth,bool wire=true);
-    void Sphere(const Vec3 &position, float radius, int rings, int slices,bool wire=true);
-  
-
-
-*/
 static JSValue js_canvas_set_color (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 3)
@@ -2464,13 +2460,104 @@ static JSValue js_canvas_sphere (JSContext *ctx, JSValueConst , int argc, JSValu
     return JS_NULL;
 }
 
-    // void SetMode(int mode);                        
-       
+static JSValue js_canvas_set_mode (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_mode: Wrong number of arguments(mode)");
+    }
+    int mode;
+    JS_ToInt32(ctx, &mode,argv[0]);
+    Scene::Instance().GetRenderBatch().SetMode(mode);
+    return JS_NULL;
+}
 
-          
-    // void Vertex2f(float x, float y);          
-    // void Vertex3f(float x, float y, float z);     
-    // void TexCoord2f(float x, float y); 
+static JSValue js_canvas_vertex2f (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 2)
+    {
+        return JS_ThrowReferenceError(ctx, "vertex2f: Wrong number of arguments(x, y)");
+    }
+    double x,y;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    Scene::Instance().GetRenderBatch().Vertex2f(x,y);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_vertex3f (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "vertex3f: Wrong number of arguments(x, y, z)");
+    }
+    double x,y,z;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    JS_ToFloat64(ctx, &z,argv[2]);
+    Scene::Instance().GetRenderBatch().Vertex3f(x,y,z);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_texcoord2f (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 2)
+    {
+        return JS_ThrowReferenceError(ctx, "texcoord2f: Wrong number of arguments(x, y)");
+    }
+    double x,y;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    Scene::Instance().GetRenderBatch().TexCoord2f(x,y);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_set_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_texture: Wrong number of arguments(textureIndex)");
+    }
+    int textureIndex;
+    JS_ToInt32(ctx, &textureIndex,argv[0]);
+
+    Texture2D *texture =TextureManager::Instance().GetTexture(textureIndex);
+    if (!texture)
+    {
+        return JS_ThrowReferenceError(ctx, "set_texture:texture [%d]  not found",textureIndex);
+    }
+    Scene::Instance().GetRenderBatch().SetTexture(texture);
+
+
+    return JS_NULL;
+}
+
+static JSValue js_canvas_draw_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "draw_texture: Wrong number of arguments(textureIndex,x,y,w,h)");
+    }
+    int textureIndex;
+    JS_ToInt32(ctx, &textureIndex,argv[0]);
+    double x,y,w,h;
+    JS_ToFloat64(ctx, &x,argv[1]);
+    JS_ToFloat64(ctx, &y,argv[2]);
+    JS_ToFloat64(ctx, &w,argv[3]);
+    JS_ToFloat64(ctx, &h,argv[4]);
+
+    Texture2D *texture =TextureManager::Instance().GetTexture(textureIndex);
+    if (!texture)
+    {
+        return JS_ThrowReferenceError(ctx, "set_texture:texture [%d]  not found",textureIndex);
+    }
+    Scene::Instance().GetRenderBatch().Quad(texture,x,y,w,h);
+
+
+    return JS_NULL;
+}
+
+
 
 JSFunctionMap canvasFunctions =
 {
@@ -2481,6 +2568,13 @@ JSFunctionMap canvasFunctions =
     {"cube", js_canvas_cube},
     {"sphere", js_canvas_sphere},
     {"grid", js_canvas_grid},
+
+    {"set_mode", js_canvas_set_mode},
+    {"vertex2", js_canvas_vertex2f},
+    {"vertex3", js_canvas_vertex3f},
+    {"texcoord", js_canvas_texcoord2f},
+    {"set_texture", js_canvas_set_texture},
+    {"draw_texture", js_canvas_draw_texture},
 
 
 };

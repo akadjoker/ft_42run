@@ -1,0 +1,53 @@
+assets:
+    load_texture            fileName
+    set_texture_path        path
+    set_texture_load_flip   bool
+canvas:
+    set_mode    mode !lines,quad,tri 
+    vertex2    x,y
+    vertex3    x,y,z
+    texcoord   u,v 
+    set_color   r,g,b
+
+    line        x1,y1,x2,y2
+   
+    set_texture index 
+    draw_texture index,x,y,w,h   
+
+    line3d      x1,y1,z1,x2,y2,z2
+    cube        x,y,z,w,h,d, whire
+    sphere      x,y,z,r, rings , slices, whire
+    grid        slices, spacing,[axies=false]
+
+
+scene:
+    load_entity         fileName,name,castShadow
+    load_static_node    name,cast_Shadow
+    load_model          fileName,name
+
+    remove_model        index
+    remove_entity       index
+    remove_node         index 
+
+    create_cube         w,h,d
+    create_plane          stacks,slices,tilesX,tilesY [uvTileX,uvTileY] 
+    create_quad           x,y,width,height
+
+    node_add_model        nodeIndex, modelIndex  
+    enttty_add_animation  entityIndex, filename
+    entity_play_animation entityIndex, name, loop,blend
+    set_node_postion      nodeIndex, x, y, z
+    set_node_rotation     nodeIndex, x, y, z
+    set_node_scale        nodeIndex, x, y, z
+    set_model_texture     modelIndex, materialIndex, textureIndex
+    set_model_name        modelIndex, name
+    set_model_culling     modelIndex,layer, culling
+    set_model_scale             modelIndex, x, y, z !on mesh 
+    set_model_position          modelIndex, x, y, z !on mesh
+    set_model_rotation          modelIndex, x, y, z !on mesh
+    model_update_normals        modelIndex,mesh
+    model_update_smoth_normals modelIndex,mesh,angleWeighted
+
+    set_light_color lightIndex, r, g, b
+    set_light_position          lightIndex, x, y, z
+    set_light_intensity         lightIndex, intensity

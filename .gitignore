@@ -1,4 +1,5 @@
 /main
 /obj
-/bin
+/bin/game_main
+/bin/tmp
 /build

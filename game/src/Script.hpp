@@ -132,11 +132,15 @@ inline void RegisterMouseFunctions(JSContext* ctx, JSValue global_obj)
 
 static  JSValue js_assets_load_texture(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "load_texture: Wrong number of arguments(fileName)");
+    }
     const char* fileName = JS_ToCString(ctx, argv[0]);
     int result = 0;
     if (!TextureManager::Instance().LoadTexture(fileName))
     {
-          JS_ThrowReferenceError(ctx, "assets_load_texture: fail load texture (%s)", fileName);
+          JS_ThrowReferenceError(ctx, "load_texture: fail load texture (%s)", fileName);
     } else 
     {
         result = TextureManager::Instance().GetTotalTextures();
@@ -148,6 +152,10 @@ static  JSValue js_assets_load_texture(JSContext* ctx, JSValueConst this_val, in
 
 static  JSValue js_assets_set_texture_path(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_texture_path: Wrong number of arguments(path)");
+    }
     const char* path = JS_ToCString(ctx, argv[0]);
     TextureManager::Instance().SetTexturePath(path);
     JS_FreeCString(ctx, path);
@@ -156,6 +164,10 @@ static  JSValue js_assets_set_texture_path(JSContext* ctx, JSValueConst this_val
 
 static  JSValue js_assets_set_texture_flip(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_texture_flip: Wrong number of arguments(bool)");
+    }
     bool flip = JS_ToBool(ctx, argv[0]);
     TextureManager::Instance().FlipTextureOnLoad(flip);
     return JS_NULL;
@@ -166,7 +178,7 @@ JSFunctionMap assetsTextureFunctions =
 {
     {"load_texture", js_assets_load_texture},
     {"set_texture_path", js_assets_set_texture_path},
-    {"set_texture_flip_load", js_assets_set_texture_flip},
+    {"set_texture_load_flip", js_assets_set_texture_flip},
 };
 
 inline void RegisterAssetsFunctions(JSContext* ctx, JSValue global_obj) 

@@ -11,7 +11,6 @@
 #include <quickjs-libc.h>
 #include <quickjs.h>
 
-
 using JSFunctionMap = std::map<std::string, JSValue(*)(JSContext*, JSValueConst, int, JSValueConst*)>;
 
 #include "Script.hpp"
@@ -69,7 +68,7 @@ int main()
     float lastY = screenHeight / 2.0f;
     bool firstMouse = true;
     bool followCameraMode = false;
-    bool isMoving = false;
+
     // FollowCamera followCamera(Vec3(0.0f, 8.0f, -8.0f), 0.99f);
     FixCamera followCamera(Vec3(0.0f, 1.0f, -5.0f));
 
@@ -215,27 +214,27 @@ int main()
 
     
         float deltaTime = device.GetFrameTime();
-        isMoving = false;
+
         if (Keyboard::Down(KEY_W))
         {
             camera.ProcessKeyboard(FORWARD, deltaTime);
-            isMoving = true;
+         
          } 
          if (Keyboard::Down(KEY_S))
          {
              camera.ProcessKeyboard(BACKWARD, deltaTime);
-             isMoving = true;
+
          }
          if (Keyboard::Down(KEY_A))
          {
 			 camera.ProcessKeyboard(LEFT, deltaTime);
-             isMoving = true;
+
 		 }
     
          if (Keyboard::Down(KEY_D))
          {
              camera.ProcessKeyboard(RIGHT, deltaTime);
-             isMoving = true;
+
          }
 
 
