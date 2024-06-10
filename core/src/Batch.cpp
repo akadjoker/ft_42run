@@ -551,6 +551,83 @@ void RenderBatch::Line2D(const Vec2 &start,const Vec2 &end)
     Vertex2f(end.x, end.y);
 }
 
+
+void RenderBatch::Circle(int centerX, int centerY, float radius,  bool fill)
+{
+ 
+    if (fill)
+    {
+        SetMode(TRIANGLES);
+    
+        float x = centerX;
+        float y = centerY;
+        float angle = 0.0f;
+        float angleInc = 1.0f / radius;
+        for (int i = 0; i < 360; i++)
+        {
+            Vertex2f(x, y);
+            Vertex2f(x + cos(angle) * radius, y + sin(angle) * radius);
+            angle += angleInc;
+            Vertex2f(x + cos(angle) * radius, y + sin(angle) * radius);
+        }
+    }
+    else
+    {
+        SetMode(LINES);
+        float x = centerX;
+        float y = centerY;
+        float angle = 0.0f;
+        float angleInc = 1.0f / radius;
+        for (int i = 0; i < 360; i++)
+        {
+            Vertex2f(x + cos(angle) * radius, y + sin(angle) * radius);
+            angle += angleInc;
+            Vertex2f(x + cos(angle) * radius, y + sin(angle) * radius);
+        }
+    }
+}
+
+void RenderBatch::Rectangle(int posX, int posY, int width, int height,  bool fill)
+{
+
+    if (fill)
+    {
+        SetMode(TRIANGLES);
+     
+
+        float x = posX;
+        float y = posY;
+
+       
+
+        Vertex2f(x   , y);
+        Vertex2f(x, y + height);
+        Vertex2f( x + width  , y);
+
+        Vertex2f( x + width   , y);
+        Vertex2f(x , y + height);
+        Vertex2f( x + width, y + height);
+    
+    } else 
+    {
+        SetMode(LINES);
+
+
+        Vertex2f(posX , posY );
+        Vertex2f(posX + width, posY );
+
+        Vertex2f(posX + width, posY );
+        Vertex2f(posX + width, posY + height);
+
+        Vertex2f(posX + width, posY + height);
+        Vertex2f(posX , posY + height);
+
+        Vertex2f(posX , posY + height);
+        Vertex2f(posX , posY );
+    
+    }
+}
+
 void RenderBatch::Line3D(const Vec3 &start, const Vec3 &end)
 {
     SetMode(LINES);
@@ -1141,6 +1218,7 @@ void RenderBatch::Quad(const Vec2 *coords, const Vec2 *texcoords)
     TexCoord2f(texcoords[3].x, texcoords[3].y);
     Vertex2f(coords[3].x, coords[3].y);
 
+
 }
 
 void RenderBatch::SetTexture(Texture2D *texture)
@@ -1357,6 +1435,8 @@ Font::~Font()
 {
    Release();
 }
+
+
 
 void Font::Release()
 {
@@ -1768,89 +1848,6 @@ void Font::Print( float x, float y, const char *text, ...)
 
 
 
-// bool Font::Load(const String& filePath)
-// {
-
-// //     ifstream file(filePath);
-// //    // m_height = 1;
-
-// //     if (file.is_open())
-// //     {
-// //         string line;
-// //         while (getline(file, line))
-// //         {
-// //           //  Character data;
-
-// //             istringstream iss(line);
-// //             // cout<<line<<endl;
-
-// //             float width = 1;
-// //             float height = 1;
-// //             float xoffset = 0;
-// //             float yoffset = 0;
-// //             float x = 0;
-// //             float y = 0;
-
-
-
-// //             size_t start = line.find('"');
-// //             size_t end = line.find('"', start + 1);
-// //             if (start != string::npos && end != string::npos)
-// //             {
-// //                 int id = line[start + 1];
-// //                 char c = line[start + 1];
-// //             }
-
-
-
-// //             // Verificamos se a linha tem o n�mero esperado de valores separados por delimitadores
-// //             stringstream ss(line.substr(end + 1));
-// //             char delimiter;
-// //             if (ss >> delimiter >> x >> delimiter >> y >> delimiter >> width >> delimiter >> height >> delimiter)
-// //             {
-
-// //                 if (delimiter != ',' || ss.fail() || width <= 1 || height <= 1)
-// //                 {
-// //                     LogError( "Formato incorreto na linha: %s", line.c_str());
-// //                     return false;
-// //                 }
-
-
-
-// //                /* if (data.height > m_height)
-// //                 {
-// //                     m_height = data.height;
-// //                 }*/
-
-// //                 // stringstream ss(line.substr(end + 1));
-// //                 // char delimiter;
-// //                 // ss >> delimiter >> data.x >> delimiter >> data.y >> delimiter  >> data.width >> delimiter >> data.height >> delimiter;
-
-// //                 // if (data.height > m_height) 
-// //                 // {
-// //                 //     m_height = data.height;
-// //                 // }
-
-// //             //    cout<<data.id<< " " <<data.x<<" "<<data.y<<" "<<data.width<<" "<<data.height<<endl;
-// //              //   m_letters.push_back(data);
-// //             //    m_sizes.push_back(data.width);
-// //             }
-
-
-
-// //         }
-// //         file.close();
-// //         return true;
-// //     }
-// //     else
-// //     {
-// //        LogError( "Erro ao abrir o arquivo %s ", filePath.c_str());
-// //         return false;
-// //     }
-
-// return false;
-
-// }
 
 
 
@@ -1875,6 +1872,154 @@ int Font::getGlyphIndex( int codepoint)
     if ((index == 0) && (m_glyphs[0].value != codepoint)) index = fallbackIndex;
 
     return index;
+}
+
+
+
+bool Font::Load(const char* filePath)
+{
+
+      const char* fileDir  = System::Instance().GetDirectoryPath(filePath);
+      const char* fileName  = System::Instance().GetFileNameWithoutExt(filePath); 
+
+      std::string fontTexturePng = std::string(fileDir) + std::string(fileName) + std::string(".png");
+      std::string fontTextureTga = std::string(fileDir) + std::string(fileName) + std::string(".tga");
+
+
+      if (System::Instance().FileExists(fontTexturePng.c_str()))
+      {
+           texture = new Texture2D(fontTexturePng.c_str());
+      } else 
+      if (System::Instance().FileExists(fontTextureTga.c_str()))
+      {
+            texture = new Texture2D(fontTextureTga.c_str());
+      } else 
+      {
+        LogError("Texture not found: %s%s",fileDir,fileName);
+        return false;
+      }
+
+      
+
+    
+
+     
+       std::ifstream file(filePath);
+       float m_height =1;
+
+       std::vector<Character> m_chars;
+
+       if (file.is_open()) 
+       {
+        std::string line;
+        while (std::getline(file, line)) 
+        {
+            Character data;
+            
+            std::istringstream iss(line);
+           // std::cout<<line<<std::endl;
+
+            data.width= 1;
+            data.height= 1;
+            data.xoffset= 0;
+            data.yoffset= 0;
+            data.x=0;
+            data.y=0;
+
+
+
+            size_t start = line.find('"');
+            size_t end = line.find('"', start + 1);
+            if (start != std::string::npos && end != std::string::npos) 
+            {
+
+                data.id = static_cast<int>(line[start + 1]);
+            }
+
+             // Verificamos se a linha tem o número esperado de valores separados por delimitadores
+            std::stringstream ss(line.substr(end + 1));
+            char delimiter;
+            if (ss >> delimiter >> data.x >> delimiter >> data.y >> delimiter >> data.width >> delimiter >> data.height >> delimiter) 
+            {
+            
+                if (delimiter != ',' || ss.fail() || data.width <= 1 || data.height <= 1) 
+                {
+                   LogError("wrong format: %s", line.c_str());
+                   return false;
+                }
+
+                m_chars.push_back(data);
+
+
+                if (data.height > m_height) 
+                {
+                    m_height = data.height;
+                }
+
+
+            }
+
+         
+          
+        }
+        file.close();
+
+
+        m_glyphCount =(int) m_chars.size();   
+        m_glyphPadding = 0;   
+
+
+
+        m_glyphs.reserve(m_glyphCount);
+        m_recs.reserve(m_glyphCount);
+
+    
+    
+
+   
+
+    texture ->SetMinFilter(FilterMode::Nearest);
+    texture ->SetMagFilter(FilterMode::Nearest);
+    texture ->SetWrapS(WrapMode::Repeat);
+    texture ->SetWrapT(WrapMode::Repeat);
+ 
+
+
+
+
+    for (int i = 0; i < m_glyphCount; i++)
+    {
+
+        Character c = m_chars[i];
+  
+
+        m_glyphs[i].value = c.id;
+
+        m_recs[i].x = c.x;
+        m_recs[i].y = c.y;
+        m_recs[i].width  = c.width;
+        m_recs[i].height = c.height;
+
+        m_glyphs[i].offsetX = c.xoffset;
+        m_glyphs[i].offsetY = c.yoffset;
+        m_glyphs[i].advanceX = 0;
+    }
+
+ 
+
+     m_baseSize = (int)m_recs[0].height;
+
+    
+
+
+
+
+        return true;
+    } else 
+    {
+        LogError("File not found: %s", filePath);
+        return false;
+    }
 }
 
 
@@ -1969,7 +2114,6 @@ bool  Font::LoadDefaultFont()
         }
         else currentPosX = testPosX;
 
-        // NOTE: On default defaultFont character offsets and xAdvance are not required
         m_glyphs[i].offsetX = 0;
         m_glyphs[i].offsetY = 0;
         m_glyphs[i].advanceX = 0;

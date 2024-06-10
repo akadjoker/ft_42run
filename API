@@ -9,7 +9,15 @@ canvas:
     texcoord   u,v 
     set_color   r,g,b
 
+
+
+    print       text,x,y 
+    set_font    index 
+    load_font   filename
+
     line        x1,y1,x2,y2
+    circle      x, y, r [fill]
+    rect        x, y, w, h [fill]
    
     set_texture index 
     draw_texture index,x,y,w,h   
@@ -21,6 +29,8 @@ canvas:
 
 
 scene:
+    enable_3d           bool 
+    enable_2d           bool
     load_entity         fileName,name,castShadow
     load_static_node    name,cast_Shadow
     load_model          fileName,name

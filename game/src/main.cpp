@@ -78,10 +78,10 @@ JSFunctionMap globalFunctions =
 
 inline void RegisterGlobalFunctions(JSContext* ctx, JSValue global_obj) 
 {
-    JSValue core = JS_NewObject(ctx);
+   
     for (const auto& func : globalFunctions) 
     {
-        JS_SetPropertyStr(ctx, core, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
+        JS_SetPropertyStr(ctx, global_obj, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
     }
 }
 

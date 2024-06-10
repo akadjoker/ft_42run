@@ -52,6 +52,12 @@ public:
     void Line3D(const Vec3 &start, const Vec3 &end);
     void Line3D(float startX, float startY, float startZ, float endX, float endY, float endZ);
 
+
+    void Circle(int centerX, int centerY, float radius,  bool fill = false);
+    void Rectangle(int posX, int posY, int width, int height, bool fill = false);
+   
+    
+
    // void Box(const BoundingBox &box);
    // void Box(const BoundingBox &box,const Mat4 &transform);
 
@@ -109,9 +115,9 @@ public:
     bool use_matrix;
     Mat4 modelMatrix;
     Mat4 viewMatrix;
- 
 
-   Texture2D m_defaultTexture ;
+
+    Texture2D m_defaultTexture;
 
     std::vector<DrawCall*> draws;
     std::vector<VertexBuffer*> vertexBuffer;
@@ -171,6 +177,17 @@ class  CORE_PUBLIC  Font : public Ref
     private:
         friend class RenderBatch;
 
+
+    struct Character
+        {
+            int id;
+            u16 x;
+            u16 y;
+            u16 width;
+            u16 height;
+            u16 xoffset;
+            u16 yoffset;
+          };
 
         Font(const Font& other) = delete;
         Font& operator=(const Font& other) = delete;

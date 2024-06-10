@@ -1,43 +1,38 @@
-import { getRandomInt } from './utils.js';
+include("assets/scripts/utils.js");
 
-class Sprites 
+
+
+class Bunny
 {
-
     constructor()
     {
-        this.vertex = []
-        this.uv = []
+        this.x = Random(0, 840);
+        this.y = Random(0, 450);
+        this.speedX = Random(-256,256)/60.0
+        this.speedY = Random(-256,256)/60.0
     }
-    
-    render(texture, x, y, width, height)
-    {
-        let left = 0;        let right = 1;
-        let top = 0;         let bottom = 1;
-        
-        let x1 =x;                let y1 =y;
-        let x2 =x;                let y2 =y + height;
-        let x3 =x + width;        let y3 =y + height;
-        let x4 = x + width; let y4 = y;
 
-        canvas.set_texture(texture);
-        
-        canvas.texcoord(left, top);
-        canvas.vertex2(x1, y1);
-    
-        canvas.texcoord(left, bottom);
-        canvas.vertex2(x2, y2);
-        
-        canvas.texcoord(right, bottom);
-        canvas.vertex2(x3, y3);
-        
-        canvas.texcoord(right, top);
-        canvas.vertex2(x4, y4);
+    update()
+    {
+        this.x += this.speedX
+        this.y += this.speedY
+
+        if (this.x < 0 || this.x > 840)
+        {
+            this.speedX = -this.speedX
+        }
+        if (this.y < 0 || this.y > 450)
+        {
+            this.speedY = -this.speedY
+        }
+        // batch.render(1, this.x, this.y,32,32);
+        canvas.draw_texture(1, this.x, this.y,32,32);
     }
 }
 
-var sprites = new Sprites();
 
 
+let bunnies =[]
 
 function load()
 {
@@ -50,13 +45,18 @@ function load()
 
     assets.set_texture_path("assets/");
 
-    let img = assets.load_texture("sprites/tiles3.png");
-    assets.load_texture("sprites/tiles3.png");
+    let img = assets.load_texture("sprites/wabbit_alpha.png");
+    
     
     scene.set_model_texture(model, 0, img);
 
-    console.log(getRandomInt(100));
+
     assets.set_texture_path("assets/textures/");
+   // scene.enable_3d(false)
+
+    canvas.load_font("assets/fonts/font1.fnt");
+
+    
     
 
 }
@@ -68,72 +68,46 @@ function unload()
 
 function render()
 {
-    canvas.grid(10, 10,true);
+    canvas.grid(10, 10, true);
+    screens.render()
 }
 
 function update(dt)
 {
-   
+ 
+    screens.update(dt)
+    
+    if (mouse.down(0))
+        {
+            
+             for (let i = 0; i < 100; i++)
+            {
+                bunnies.push(new Bunny())
+            }
+        }
 }
 
 
 
 function gui()
 {
+    screens.render_gui()
     canvas.set_color(255,255,255)
-  //  canvas.draw_texture(1, 10, 10, 100, 100)
-
-    sprites.render(1, 100, 10, 100, 100)
-
-    
-    //line 1 tri 4 quad 8
-
-    // SetMode(QUAD);
-
-    // TexCoord2f(texcoords[0].x, texcoords[0].y);
-    // Vertex2f(coords[0].x, coords[0].y);
-
-    // TexCoord2f(texcoords[1].x, texcoords[1].y);
-    // Vertex2f(coords[1].x, coords[1].y);
-
-    // TexCoord2f(texcoords[2].x, texcoords[2].y);
-    // Vertex2f(coords[2].x, coords[2].y);
-
-    // TexCoord2f(texcoords[3].x, texcoords[3].y);
-    // Vertex2f(coords[3].x, coords[3].y);
-    
-    // let left = 0;
-    // let right = 1;
-    // let top = 0;
-    // let bottom = 1;
-
-
-
-   
-    // let x = 400;
-    // let y = 300;
-
-    // let width = 100;
-    // let height = 100;
+    canvas.set_texture(1);
     
 
-    
-    // let x1 =x;                let y1 =y;
-    // let x2 =x;                let y2 =y + height;
-    // let x3 =x + width;        let y3 =y + height;
-    // let x4 = x + width; let y4 = y;
-    
-    // canvas.texcoord(left, top);
-    // canvas.vertex2(x1, y1);
 
-    // canvas.texcoord(left, bottom);
-    // canvas.vertex2(x2, y2);
+      for (let i = 0; i < bunnies.length; i++)
+        {
+            bunnies[i].update()
+        }
+
+    canvas.circle(100, 100, 23)
+    canvas.rect(100, 100, 23, 23, true)
     
-    // canvas.texcoord(right, bottom);
-    // canvas.vertex2(x3, y3);
+    canvas.set_font(1);
     
-    // canvas.texcoord(right, top);
-    // canvas.vertex2(x4, y4);
+    canvas.print(10, 30, "bunnies: " + bunnies.length)
 
     
 }

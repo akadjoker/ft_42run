@@ -40,6 +40,8 @@ Cascade cascades[SHADOW_MAP_CASCADE_COUNT];
 Vec3 lightPosition = Vec3(0.5f, 4.0f,  7.5f);
 TextureBuffer renderTexture;
 
+
+
 void updateCascades(const Mat4 & view, const Mat4 & proj,const Vec3 & lightPos)
 	{
 		float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
@@ -466,7 +468,7 @@ Model *Scene::CreatePlane(int stacks, int slices, int tilesX, int tilesY, float 
 
     return model;
 
-}
+} 
 
 void Scene::Init()
 {
@@ -478,7 +480,7 @@ void Scene::Init()
         m_lights.push_back(Light());
     }
 
-    batch.Init(2, 1024 * 4);
+    batch.Init(2, 1024 * 8);
 
     font = new Font();
 
@@ -495,6 +497,7 @@ void Scene::Init()
     quadRender.Init(width, height);
 
     renderTexture.Init(width, height);
+
 
     //  StaticNode *lights = CreateStaticNode("lights",true);
 
@@ -672,7 +675,71 @@ bool Scene::RemoveNode(int index)
     return false;
 }
 
-void Scene::InitJs(JSContext* ctx , JSValue global_obj)
+bool Scene::LoadFont(const char *fileName)
+{
+    Font *font = new Font();
+    if (font->Load(fileName))
+    {
+        font->SetBatch(&batch);
+        m_fonts.push_back(font);
+        currentFont = m_fonts.size() - 1;
+        return true;
+    }
+    delete font;
+    return false;
+}
+
+bool Scene::SetFont(u32 index)
+{
+    if (index < m_fonts.size())
+    {
+        currentFont = index;
+        return true;
+    }
+    return false;
+}
+
+void Scene::RemoveNodes()
+{
+
+
+
+   
+
+    for (u32 i = 0; i < m_nodes.size(); i++)
+    {
+        delete m_nodes[i];
+    }
+    m_nodes.clear();
+
+ 
+
+
+    for (u32 i = 0; i < m_nodesToDelete.size(); i++)
+    {
+        delete m_nodesToDelete[i];
+    }
+    m_nodesToDelete.clear();
+}
+
+void Scene::RemoveEntities()
+{
+
+    for (u32 i = 0; i < m_entities.size(); i++)
+    {
+        delete m_entities[i];
+    }
+
+    m_entities.clear();
+
+    for (u32 i = 0; i < m_entities.size(); i++)
+    {
+        delete m_entities[i];
+    }
+    m_entities.clear();
+}
+
+void Scene::InitJs(JSContext *ctx, JSValue global_obj)
 {
     this->ctx = ctx;
     this->global_obj = global_obj;
@@ -873,7 +940,8 @@ void Scene::Render()
         
 
 
-
+    if (do3D)
+    {
     
        updateCascades(viewMatrix, projectionMatrix, lightPosition);
 
@@ -987,7 +1055,7 @@ void Scene::Render()
     
     for (u32 i = 0; i < m_nodes.size(); i++)
     {
-        //if (!m_nodes[i]->visible) continue;
+        if (!m_nodes[i]->visible) continue;
         Mat4 m = m_nodes[i]->GetRelativeTransformation();
         m_modelShader.SetMatrix4("model", m.x);
         m_nodes[i]->Render();
@@ -998,7 +1066,7 @@ void Scene::Render()
     for (u32 i = 0; i < m_entities.size(); i++)
     {
         Entity *entity = m_entities[i];
-     //   if (!entity->visible) continue;
+        if (!entity->visible) continue;
         Mat4 mat = entity->GetRelativeTransformation();
         m_modelShader.SetMatrix4("model", mat.x);
         for (u32 b = 0; b < entity->bones.size(); b++)
@@ -1036,7 +1104,19 @@ void Scene::Render()
      Driver::Instance().SetViewport(0, 0, width, height);
      quadRender.Render();
     }
+} else 
+{
+
+
+        Driver::Instance().SetBlendMode(BlendMode::BLEND);
+        Driver::Instance().SetViewport(0, 0, width, height);
+        Driver::Instance().SetClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        Driver::Instance().Clear();
+}
+
 //batch 2d
+if (do2D)
+{
     Driver::Instance().SetDepthTest(false);
     Driver::Instance().SetBlend(true);
     Mat4 view2D = Mat4::Ortho(0.0f, width, height, 0.0f, -5.0f, 5.0f);
@@ -1045,7 +1125,9 @@ void Scene::Render()
     batch.SetColor(255, 255, 255, 255);
     font->SetFontSize(12);
     font->Print(10, 10, System::Instance().TextFormat("FPS: %d", Device::Instance().GetFPS()));
+
     batch.Render();
+}
 
     //   depthBuffer.BindTexture(1);   
     //   quadRender.Render(-0.8f,0.35f,0.4f);
@@ -1053,41 +1135,43 @@ void Scene::Render()
     //   depthBuffer.BindTexture(2);   
     //   quadRender.Render(-0.8f,-0.1f,0.4f);
 
-    //     Driver::Instance().SetBlend(true);
 
 }
 
 void Scene::Update(float elapsed)
 {
     UpdateJs(elapsed);
-    for (u32 i = 0; i < m_nodes.size(); i++)
+    if (do3D)
     {
-        if (m_nodes[i]->done)
+        for (u32 i = 0; i < m_nodes.size(); i++)
         {
-            m_nodesToDelete.push_back(m_nodes[i]);
-            m_nodes.erase(m_nodes.begin() + i);
-            i--;
-            continue;
+            if (m_nodes[i]->done)
+            {
+                m_nodesToDelete.push_back(m_nodes[i]);
+                m_nodes.erase(m_nodes.begin() + i);
+                i--;
+                continue;
+            }
+            if (!m_nodes[i]->active) continue;
+            
+            m_nodes[i]->Update();
         }
-        if (!m_nodes[i]->active) continue;
-        
-        m_nodes[i]->Update();
-    }
-   
+    
 
-    for (u32 i = 0; i < m_entities.size(); i++)
-    {
-        Entity *entity = m_entities[i];
-        if (!entity->active) continue;
-        entity->UpdateAnimation(elapsed);
-        entity->Update();
-    }
+        for (u32 i = 0; i < m_entities.size(); i++)
+        {
+            Entity *entity = m_entities[i];
+            if (!entity->active) continue;
+            entity->UpdateAnimation(elapsed);
+            entity->Update();
+        }
 
-    for (u32 i = 0; i < m_nodesToDelete.size(); i++)
-    {
-        delete m_nodesToDelete[i];
+        for (u32 i = 0; i < m_nodesToDelete.size(); i++)
+        {
+            delete m_nodesToDelete[i];
+        }
+        m_nodesToDelete.clear();
     }
-    m_nodesToDelete.clear();
 }
 
 bool Scene::LoadModelShader()
@@ -2291,12 +2375,39 @@ static JSValue js_set_light_intensity (JSContext *ctx, JSValueConst , int argc, 
     return JS_NULL;
 }
 
+static JSValue js_set_enbale_3d(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "enbale_3d: Wrong number of arguments(enable)");
+    }
+    bool do3D = JS_ToBool(ctx, argv[0]);
+
+    Scene::Instance().Enable3D(do3D);
+
+    return JS_NULL;
+}
+static JSValue js_set_enbale_2d(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "enbale_2d: Wrong number of arguments(enable)");
+    }
+    bool do2D = JS_ToBool(ctx, argv[0]);
+
+    Scene::Instance().Enable2D(do2D);
+
+    return JS_NULL;
+
+}
 
 using JSFunctionMap = std::map<std::string, JSValue(*)(JSContext*, JSValueConst, int, JSValueConst*)>;
 
 
 JSFunctionMap sceneFunctions = 
 {
+    {"enable_3d", js_set_enbale_3d},
+    {"enable_2d", js_set_enbale_2d},
     {"load_entity", js_scene_load_entity},
     {"load_model", js_scene_load_model},
     
@@ -2373,6 +2484,55 @@ static JSValue js_canvas_line2d (JSContext *ctx, JSValueConst , int argc, JSValu
     JS_ToFloat64(ctx, &x2,argv[2]);
     JS_ToFloat64(ctx, &y2,argv[3]);
     Scene::Instance().GetRenderBatch().Line2D(x1,y1,x2,y2);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_circle (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    
+    double x,y,r;
+    bool fill=false;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    JS_ToFloat64(ctx, &r,argv[2]);
+  
+    if (argc !=3 && argc !=4)
+    {
+        return JS_ThrowReferenceError(ctx, "circle: Wrong number of arguments(x, y, r [fill])");
+    }
+ 
+    if (argc == 4)
+    {
+        fill=JS_ToBool(ctx, argv[3]);
+        Scene::Instance().GetRenderBatch().Circle(x,y,r,fill);
+    }
+    Scene::Instance().GetRenderBatch().Circle(x,y,r,fill);
+
+    return JS_NULL;
+}
+
+static JSValue js_canvas_rect (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    
+    double x,y,w,h;
+    bool fill=false;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    JS_ToFloat64(ctx, &w,argv[2]);
+    JS_ToFloat64(ctx, &h,argv[3]);
+
+    if (argc !=5 && argc !=5)
+    {
+        return JS_ThrowReferenceError(ctx, "rect: Wrong number of arguments(x, y, w, h [fill])");
+    }
+
+    if (argc == 5)
+    {
+        fill=JS_ToBool(ctx, argv[4]);
+        Scene::Instance().GetRenderBatch().Rectangle(x,y,w,h,fill);
+    }
+    
+    
     return JS_NULL;
 }
 
@@ -2512,6 +2672,10 @@ static JSValue js_canvas_texcoord2f (JSContext *ctx, JSValueConst , int argc, JS
     return JS_NULL;
 }
 
+
+
+
+
 static JSValue js_canvas_set_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
 {
     if (argc != 1)
@@ -2556,7 +2720,65 @@ static JSValue js_canvas_draw_texture (JSContext *ctx, JSValueConst , int argc, 
 
     return JS_NULL;
 }
+static JSValue js_canvas_print (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "print: Wrong number of arguments(text,x,y)");
+    }
+    const char* text= JS_ToCString(ctx, argv[3]);
+    double x,y;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
 
+    Scene::Instance().GetFont()->Print(text,x,y);
+
+    
+    
+    JS_FreeCString(ctx, text);
+
+    return JS_NULL;
+}
+
+static JSValue js_canvas_set_font (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_font: Wrong number of arguments(fontIndex)");
+    }
+    int fontIndex;
+    JS_ToInt32(ctx, &fontIndex,argv[0]);
+    Scene::Instance().SetFont(fontIndex);
+   
+
+    return JS_NULL;
+}
+
+static JSValue js_canvas_load_font (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "load_font: Wrong number of arguments(fileName)");
+    }
+    const char* text= JS_ToCString(ctx, argv[0]);
+
+    JSValue result;
+    if (Scene::Instance().LoadFont(text))
+    {
+
+        result = JS_NewInt32(ctx,Scene::Instance().GetFontsCount()-1);
+    } else 
+    {
+        JS_ThrowReferenceError(ctx, "load_font: font [%s] not found",text);
+        result = JS_NULL;
+    }
+
+    JS_FreeCString(ctx, text);
+
+
+    return result;
+
+}
 
 
 JSFunctionMap canvasFunctions =
@@ -2564,6 +2786,9 @@ JSFunctionMap canvasFunctions =
 
     {"set_color", js_canvas_set_color},
     {"line", js_canvas_line2d},
+    {"circle", js_canvas_circle},
+    {"rect", js_canvas_rect},
+
     {"line3d", js_canvas_line3d},
     {"cube", js_canvas_cube},
     {"sphere", js_canvas_sphere},
@@ -2573,8 +2798,13 @@ JSFunctionMap canvasFunctions =
     {"vertex2", js_canvas_vertex2f},
     {"vertex3", js_canvas_vertex3f},
     {"texcoord", js_canvas_texcoord2f},
+
     {"set_texture", js_canvas_set_texture},
     {"draw_texture", js_canvas_draw_texture},
+
+    {"print", js_canvas_print},
+    {"set_font", js_canvas_set_font},
+    {"load_font", js_canvas_load_font},
 
 
 };

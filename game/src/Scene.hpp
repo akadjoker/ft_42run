@@ -75,10 +75,24 @@ public:
     bool RemoveNode(int index);
 
     RenderBatch &GetRenderBatch() { return batch; }
+    Font *GetFont() { return m_fonts[currentFont]; };
+
+    bool LoadFont(const char* fileName);
+
+    bool SetFont(u32 index);
 
     u32 GetEntityCount() const { return (u32)m_entities.size(); }//animations nodes  
     u32 GetNodeCount()   const { return (u32)m_nodes.size(); } //static nodes with mesh/models
     u32 GetModelCount()  const { return (u32)m_models.size(); }//mesh
+
+    u32 GetFontsCount()  const { return (u32)m_fonts.size(); }
+
+
+    void RemoveNodes();
+    void RemoveEntities();
+
+    void Enable3D(bool enable) { do3D = enable; }
+    void Enable2D(bool enable) { do2D = enable; }
 
     void InitJs( JSContext* ctx , JSValue global_obj);
     void LoadJs();
@@ -118,7 +132,8 @@ private:
     std::vector<StaticNode*> m_nodes;
     std::vector<Model*> m_models;
     std::vector<Font*> m_fonts;
-    
+    u32 currentFont{0};
+
     Shader m_modelShader;
     Shader m_depthShader;
     Shader m_debugShader;
@@ -131,7 +146,8 @@ private:
     Mat4 projectionMatrix;
     Vec3 cameraPosition;
     Vec3 lightPos;
-
+    bool do3D{true};
+    bool do2D{true};
 
     std::unordered_map<std::string, JSValue> js_functions;
     std::unordered_map<std::string, bool>    js_in_functions;
