@@ -753,7 +753,7 @@ bool Entity::Load(const std::string &name)
         node->offset.set(m);
 
 
-        node->parent = this;
+      //  node->parent = this;
 
         joints.push_back(node);
 

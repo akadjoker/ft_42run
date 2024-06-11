@@ -100,9 +100,23 @@ class CORE_PUBLIC Node
 
     void SetRotation( float x, float y, float z)
     {
-        orientation.rotate(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
+        //Quaternion q;
+        //q.rotate(Vec3(T(x), ToRadians(y), ToRadians(z)));
+        orientation.setEuler(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
+        // orientation.rotate(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
     }
 
+    void Rotate(float angle, float x, float y, float z)
+    {
+        Quaternion q;
+        q.rotate(angle, x, y, z);
+        orientation *= q ;
+
+        // orientation.rotate(angle, x, y, z) * orientation;
+        //  q.rotate(Vec3(T(x), ToRadians(y), ToRadians(z)));
+        //  orientation.rotate(angle, x, y, z);
+        //   orientation.rotate(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
+    }
 
     void SetRotation(const Quaternion &q)
     {
@@ -123,6 +137,13 @@ class CORE_PUBLIC Node
 
     const Mat4 GetRelativeTransformation()
     {
+        
+        // Mat4 mScale = Mat4::Scale(scale.x, scale.y, scale.z);
+        // Mat4 mRotate = Mat4::Rotate(orientation);
+        // Mat4 mTranslate = Mat4::Translate(position.x, position.y, position.z);
+
+
+        // LocalWorld =mTranslate * mRotate *  mScale;
 
          LocalWorld = Mat4::Scale( scale.x, scale.y, scale.z );
          LocalWorld.rotate(orientation);
@@ -164,7 +185,7 @@ class CORE_PUBLIC Node
       
     }
 
-       void setLocalPosition(const Vec3 &p)
+    void setLocalPosition(const Vec3 &p)
     {
         position = p;
     }
@@ -188,11 +209,11 @@ class CORE_PUBLIC Node
              return Mat4::Transform(AbsoluteTransformation, position);
     }
 
-    void Rotate(float angle,  float x, float y, float z)
-    {
+    // void Rotate(float angle,  float x, float y, float z)
+    // {
 
-        orientation.rotate(angle, x, y, z);
-    }
+    //     orientation.rotate(angle, x, y, z);
+    // }
 
 
     void SetName(const std::string &n){name = n;}

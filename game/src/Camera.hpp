@@ -9,14 +9,6 @@ const float SENSITIVITY =  0.1f;
 const float ZOOM        =  45.0f;
 
 
-enum Movement 
-{
-    FORWARD,
-    BACKWARD,
-    LEFT,
-    RIGHT
-};
-
 class Camera
 {
 
@@ -93,16 +85,16 @@ class Camera
             Zoom = 95.0f;
     }
 
-     void ProcessKeyboard(Movement direction, float deltaTime)
+     void ProcessKeyboard(int direction, float deltaTime)
     {
         float velocity = movementSpeed * deltaTime;
-        if (direction == FORWARD)
+        if (direction == 0)
             position += front * velocity;
-        if (direction == BACKWARD)
+        if (direction == 1)
             position -= front * velocity;
-        if (direction == LEFT)
+        if (direction == 2)
             position -= right * velocity;
-        if (direction == RIGHT)
+        if (direction == 3)
             position += right * velocity;
        
     
@@ -141,11 +133,41 @@ class Camera
     }
 
 
+    void MouseView(float dt)
+    {
+                 int xposIn, yposIn;
+                 u32 IsMouseDown = SDL_GetMouseState(&xposIn, &yposIn);
+                  if ( IsMouseDown & SDL_BUTTON(SDL_BUTTON_LEFT) )
+                  {
+                          float xpos = static_cast<float>(xposIn);
+                          float ypos = static_cast<float>(yposIn);
+
+                          if (firstMouse)
+                          {
+                              lastX = xpos;
+                              lastY = ypos;
+                              firstMouse = false;
+                          }
+
+                          float xoffset = xpos - lastX;
+                          float yoffset = lastY - ypos; 
+
+                          lastX = xpos;
+                          lastY = ypos;
+
+                       ProcessMouseMovement(xoffset, yoffset);
+                  }
+                  else
+                  {
+                      firstMouse = true;
+                  }
+    }
+
     Vec3 position;
     Vec3 front;
     Vec3 up;
     Vec3 right; 
-        float Yaw;
+    float Yaw;
     float Pitch;
     private:
    
@@ -158,7 +180,12 @@ class Camera
     float near;
     float far;
 
+    
     Mat4 view;
+
+    float lastX{0};
+    float lastY{0};
+    bool firstMouse{true};
 
     void update()
     {
@@ -240,6 +267,21 @@ public:
     FixCamera(Vec3 cameraOffset) : m_CameraOffset(cameraOffset) {}
 
     void Init(Vec3 cameraOffset) 
+    {
+        m_CameraOffset = cameraOffset;
+    }
+
+    void Init(Vec3 targetPosition, Vec3 cameraOffset) 
+    {
+        m_TargetPosition = targetPosition;
+        m_CameraOffset = cameraOffset;
+    }
+    void SetTargetPosition(Vec3 targetPosition) 
+    {
+        m_TargetPosition = targetPosition;
+    }
+
+    void SetCameraOffset(Vec3 cameraOffset) 
     {
         m_CameraOffset = cameraOffset;
     }

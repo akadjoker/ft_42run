@@ -44,11 +44,19 @@ scene:
     create_quad           x,y,width,height
 
     node_add_model        nodeIndex, modelIndex  
-    enttty_add_animation  entityIndex, filename
-    entity_play_animation entityIndex, name, loop,blend
+    entity_add_animation  entityIndex, filename
+    entity_play entityIndex, name, loop,blend
+    set_entity_postion      nodeIndex, x, y, z
+    set_entity_rotation     nodeIndex, x, y, z
+    rotate_entity           nodeIndex, angle,x, y, z
+    set_entity_scale        nodeIndex, x, y, z
+    set_entity_texture     modelIndex, materialIndex, textureIndex
+
+
     set_node_postion      nodeIndex, x, y, z
     set_node_rotation     nodeIndex, x, y, z
     set_node_scale        nodeIndex, x, y, z
+
     set_model_texture     modelIndex, materialIndex, textureIndex
     set_model_name        modelIndex, name
     set_model_culling     modelIndex,layer, culling

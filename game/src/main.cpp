@@ -20,7 +20,7 @@ using JSFunctionMap = std::map<std::string, JSValue(*)(JSContext*, JSValueConst,
 
 #include "Script.hpp"
 #include "Scene.hpp"
-#include "Camera.hpp"
+
 
 
 
@@ -46,16 +46,13 @@ std::condition_variable cv;
 std::mutex cv_m;
 bool ready = false;
 
-template<class _Rep, class _Period>
-void TimerAsync(std::chrono::duration<_Rep, _Period> duration, std::function<void()> callback)
+
+void TimerAsync(std::function<void()> callback)
 {
-    std::thread([duration, callback]()
+    std::thread([callback]()
     {
-        std::this_thread::sleep_for(duration);
-        {
-            std::lock_guard<std::mutex> lk(cv_m);
-            ready = true;
-        }
+        std::lock_guard<std::mutex> lk(cv_m);
+        ready = true;
         cv.notify_one();
     }).detach();
 
@@ -165,14 +162,14 @@ int main()
 
 
     //Camera camera(Vec3(-20.0f, 10.0f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
-    Camera camera(Vec3(0.0f, 0.5f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
-    float lastX = screenWidth / 2.0f;
-    float lastY = screenHeight / 2.0f;
-    bool firstMouse = true;
-    bool followCameraMode = false;
+    //Camera camera(Vec3(0.0f, 0.5f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
+    // float lastX = screenWidth / 2.0f;
+    // float lastY = screenHeight / 2.0f;
+    // bool firstMouse = true;
+   // bool followCameraMode = false;
 
     // FollowCamera followCamera(Vec3(0.0f, 8.0f, -8.0f), 0.99f);
-    FixCamera followCamera(Vec3(0.0f, 1.0f, -5.0f));
+    //FixCamera followCamera(Vec3(0.0f, 1.0f, -5.0f));
 
 
 
@@ -236,7 +233,7 @@ int main()
     // });
 
     
-    TimerAsync(std::chrono::seconds(0), [&]()
+    TimerAsync([&]()
     {
         if (!jsPanic)
         {
@@ -313,57 +310,57 @@ int main()
 
         
 
-                 int xposIn, yposIn;
-                 u32 IsMouseDown = SDL_GetMouseState(&xposIn, &yposIn);
-                  if ( IsMouseDown & SDL_BUTTON(SDL_BUTTON_LEFT) )
-                  {
-                          float xpos = static_cast<float>(xposIn);
-                          float ypos = static_cast<float>(yposIn);
+                //  int xposIn, yposIn;
+                //  u32 IsMouseDown = SDL_GetMouseState(&xposIn, &yposIn);
+                //   if ( IsMouseDown & SDL_BUTTON(SDL_BUTTON_LEFT) )
+                //   {
+                //           float xpos = static_cast<float>(xposIn);
+                //           float ypos = static_cast<float>(yposIn);
 
-                          if (firstMouse)
-                          {
-                              lastX = xpos;
-                              lastY = ypos;
-                              firstMouse = false;
-                          }
+                //           if (firstMouse)
+                //           {
+                //               lastX = xpos;
+                //               lastY = ypos;
+                //               firstMouse = false;
+                //           }
 
-                          float xoffset = xpos - lastX;
-                          float yoffset = lastY - ypos; 
+                //           float xoffset = xpos - lastX;
+                //           float yoffset = lastY - ypos; 
 
-                          lastX = xpos;
-                          lastY = ypos;
+                //           lastX = xpos;
+                //           lastY = ypos;
 
-                       camera.ProcessMouseMovement(xoffset, yoffset);
-                  }
-                  else
-                  {
-                      firstMouse = true;
-                  }
+                //        scene.GetCamera().ProcessMouseMovement(xoffset, yoffset);
+                //   }
+                //   else
+                //   {
+                //       firstMouse = true;
+                //   }
 
     
-        float deltaTime = device.GetFrameTime();
+         float deltaTime = device.GetFrameTime();
 
-        if (Keyboard::Down(KEY_W))
-        {
-            camera.ProcessKeyboard(FORWARD, deltaTime);
+        // if (Keyboard::Down(KEY_W))
+        // {
+        //     camera.ProcessKeyboard(FORWARD, deltaTime);
          
-         } 
-         if (Keyboard::Down(KEY_S))
-         {
-             camera.ProcessKeyboard(BACKWARD, deltaTime);
+        //  } 
+        //  if (Keyboard::Down(KEY_S))
+        //  {
+        //      camera.ProcessKeyboard(BACKWARD, deltaTime);
 
-         }
-         if (Keyboard::Down(KEY_A))
-         {
-			 camera.ProcessKeyboard(LEFT, deltaTime);
+        //  }
+        //  if (Keyboard::Down(KEY_A))
+        //  {
+		// 	 camera.ProcessKeyboard(LEFT, deltaTime);
 
-		 }
+		//  }
     
-         if (Keyboard::Down(KEY_D))
-         {
-             camera.ProcessKeyboard(RIGHT, deltaTime);
+        //  if (Keyboard::Down(KEY_D))
+        //  {
+        //      camera.ProcessKeyboard(RIGHT, deltaTime);
 
-         }
+        //  }
 
 
 
@@ -380,42 +377,6 @@ int main()
 
 
       
-        
-        Mat4 proj = camera.GetProjectionMatrix((float)screenWidth / (float)screenHeight) ;
-        if (Keyboard::Pressed(KEY_ENTER))
-        {
-            followCameraMode = !followCameraMode;
-        }
-        
-
-        //followCamera.Update(deltaTime, game.player->getWorldPosition());
-//        followCamera.Update( playerActor->getWorldPosition()+ Vec3(0.0f, 1.0f, 0.0f));
-
-        Mat4 view=camera.GetViewMatrix();
-
-        if (followCameraMode)
-        {
-             view = followCamera.GetViewMatrix();
-           //  camera.position = playerActor->getWorldPosition()+ Vec3(0.0f, 5.0f, 0.0f);
-             camera.Yaw = 0.0f;
-
-
-        } else 
-        {
-            view = camera.GetViewMatrix();
-        }   
-
-     //   Mat4 view = followCamera.GetViewMatrix();
-      
-
-        Vec3 cameraPosition = camera.position;
-   
-
-
-        scene.SetProjectionMatrix(proj);
-        scene.SetViewMatrix(view);
-        scene.SetCameraPosition(cameraPosition);
-
         scene.Update(deltaTime);
 
 

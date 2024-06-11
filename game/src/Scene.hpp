@@ -11,7 +11,7 @@
 #include "Animation.hpp"
 #include "Buffer.hpp"
 #include <quickjs.h>
-
+#include "Camera.hpp"
 const int MAX_LIGHTS = 9;
 
 
@@ -59,8 +59,7 @@ public:
 
     void SetViewMatrix(const Mat4 &m) { viewMatrix = m; }
     void SetProjectionMatrix(const Mat4 &m) { projectionMatrix = m; }
-    void SetCameraPosition(const Vec3 &p) { cameraPosition = p; }
-    Vec3 GetCameraPosition() const { return cameraPosition; }
+
 
     Entity     *GetEntity(const std::string &name);
     Model      *GetModel(const std::string &name);
@@ -101,11 +100,22 @@ public:
     void UpdateJs(float elapsed);
     void GuiJs();
 
-    
-    
+    Camera GetCamera() const { return m_camera; }
+    FixCamera GetFollowCamera() const { return m_followCamera; }
 
-         Scene();
-        ~Scene();
+    void MoveCamera(int mode, float deltaTime);
+    void RotateCameraByMouse(float dt);
+    void SetCameraPosition(const Vec3 &p);
+    void SetCameraYaw(float yaw) { m_camera.Yaw = yaw; }
+    void SetCameraPitch(float pitch) { m_camera.Pitch = pitch; }
+    Vec3 GetCameraPosition() const { return cameraPosition; }
+
+    void SetFollowCameraMode(bool mode) { m_followCameraMode = mode; }
+    void SetFollowOffset(const Vec3 &offset);
+    void SetFollowCameraPosition(const Vec3 &p);
+
+    Scene();
+    ~Scene();
 
 private:
     static Scene* m_singleton;
@@ -148,6 +158,9 @@ private:
     Vec3 lightPos;
     bool do3D{true};
     bool do2D{true};
+    FixCamera m_followCamera;
+    Camera m_camera;
+    bool m_followCameraMode{false};
 
     std::unordered_map<std::string, JSValue> js_functions;
     std::unordered_map<std::string, bool>    js_in_functions;

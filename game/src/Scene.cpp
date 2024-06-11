@@ -170,10 +170,10 @@ u32 Scene::AddEntity(const std::string &fileName, const std::string &name, bool 
         e->SetName(name);
         m_entities.push_back(e);
         e->shadow = castShadow;
-        return m_entities.size() - 1;
+        return m_entities.size() -1;
     }
     delete e;
-    return 0;
+    return -1;
 }
 
 
@@ -188,7 +188,7 @@ u32 Scene::AddModel(const std::string &fileName, const std::string &name)
 
     delete m;
 
-    return 0;
+    return -1;
 }
 
 
@@ -497,6 +497,9 @@ void Scene::Init()
     quadRender.Init(width, height);
 
     renderTexture.Init(width, height);
+
+    m_camera.Init(Vec3(0.0f, 0.5f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
+    m_followCamera.Init(Vec3(0.0f, 1.0f, -5.0f));
 
 
     //  StaticNode *lights = CreateStaticNode("lights",true);
@@ -1007,7 +1010,8 @@ void Scene::Render()
         Driver::Instance().Clear();
     
 
-    cameraPosition.set(-0.5f,0.5f,0.9f);
+   // cameraPosition.set(-0.5f,0.5f,0.9f);
+   cameraPosition.set(10000,1000,10000);
 
     //lightDir = glm::normalize(glm::vec3(20.0f, 50, 20.0f));
     Vec3 lightDir = Vec3::Normalize(Vec3(-20.0f, 50, 20.0f));
@@ -1026,7 +1030,7 @@ void Scene::Render()
         m_modelShader.SetInt("shadowMap["+std::to_string(i)+"]", i + 1);
             
     }
-    depthBuffer.BindTextures(1);    
+     
 
 
 
@@ -1052,6 +1056,8 @@ void Scene::Render()
     if (useBloom)   renderTexture.Begin();
 
    //    printf("rendering %ld nodes  %ld entities\n",m_nodes.size(), m_entities.size());
+
+    depthBuffer.BindTextures(1);  
     
     for (u32 i = 0; i < m_nodes.size(); i++)
     {
@@ -1062,6 +1068,12 @@ void Scene::Render()
     }
 
     m_modelShader.SetInt("isStatic", 0);
+    //player don't have render shadow in body
+
+    Driver::Instance().SetTextureId(1, 0);
+    Driver::Instance().SetTextureId(2, 0);
+    Driver::Instance().SetTextureId(3, 0);
+    Driver::Instance().SetTextureId(4, 0);
 
     for (u32 i = 0; i < m_entities.size(); i++)
     {
@@ -1143,6 +1155,42 @@ void Scene::Update(float elapsed)
     UpdateJs(elapsed);
     if (do3D)
     {
+
+        int screenWidth = Device::Instance().GetWidth();
+        int screenHeight = Device::Instance().GetHeight();
+        
+        projectionMatrix = m_camera.GetProjectionMatrix((float)screenWidth / (float)screenHeight) ;
+        // if (Keyboard::Pressed(KEY_ENTER))
+        // {
+        //     m_followCameraMode = !m_followCameraMode;
+        // }
+        
+
+
+        //followCamera.Update(deltaTime, game.player->getWorldPosition());
+//        followCamera.Update( playerActor->getWorldPosition()+ Vec3(0.0f, 1.0f, 0.0f));
+
+        viewMatrix=m_camera.GetViewMatrix();
+
+        if (m_followCameraMode)
+        {
+             viewMatrix = m_followCamera.GetViewMatrix();
+           //  camera.position = playerActor->getWorldPosition()+ Vec3(0.0f, 5.0f, 0.0f);
+             m_camera.Yaw = 0.0f;
+
+
+        } else 
+        {
+            viewMatrix = m_camera.GetViewMatrix();
+        }   
+
+     //   Mat4 view = followCamera.GetViewMatrix();
+      
+
+        cameraPosition = m_camera.position;
+   
+
+
         for (u32 i = 0; i < m_nodes.size(); i++)
         {
             if (m_nodes[i]->done)
@@ -1400,7 +1448,7 @@ bool Scene::LoadModelShader()
             //luz para shadow "sol"
             vec3 normal = normalize(Normal);
             vec3 lightColor = vec3(0.6);
-            vec3 ambient = 0.1 * color;
+            vec3 ambient = 0.6 * color;
             float diff = max(dot(lightDir, normal), 0.0);
             vec3 diffuse = diff * lightColor;
       
@@ -1435,16 +1483,16 @@ bool Scene::LoadModelShader()
                 vec3 diffuse =  color.rgb  * diff *  lights[i].Color * lights[i].Intensity;
                 
                 // // specular
-                // vec3 halfwayDir = normalize(lightDir + viewDir);  
-                // float spec = pow(max(dot(Normal, halfwayDir), 0.0), shininess);
-                // vec3 specular =color.rgb  * spec *  lights[i].Color ;
+               //  vec3 halfwayDir = normalize(lightDir + viewDir);  
+               //  float spec = pow(max(dot(Normal, halfwayDir), 0.0), 8.0);
+               //  vec3 specular =color.rgb  * spec *  lights[i].Color ;
 
                 // specular
-                float specularStrength = lights[i].Intensity;
+                float specularStrength =  lights[i].Intensity;
                 vec3 viewDir = normalize(viewPos - FragPos);
                 vec3 reflectDir = reflect(-lightDir, Normal);  
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
-                vec3 specular = specularStrength * spec * lights[i].Color;  
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1.0);
+                vec3 specular = specularStrength * spec * color.rgb;  
                 
                 // attenuation
                 float distance = length(lights[i].Position - FragPos);
@@ -1484,8 +1532,6 @@ bool Scene::LoadModelShader()
     }
 
 
-
-    
     // float y =4.5f;
     // float x =0.2f;
 
@@ -1513,15 +1559,15 @@ bool Scene::LoadModelShader()
     // Vec3 color = Vec3(0.5f, 0.5f, 0.5f);
 
 
-    // for (int i = 0; i < m_lights.size(); i++)
-    // {
-    //     m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Position", m_lights[i].x, m_lights[i].y, m_lights[i].z);
-    //     m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Color", color.x, color.y, color.z);
-    //     m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Intensity", lightIntensity);
-    //     m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Linear", lightLinear);
-    //     m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Quadratic", lightQuadratic);
+    for (int i = 0; i < m_lights.size(); i++)
+    {
+        m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Position", 10000,1000,1000);
+        m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Color", 0,0,0);
+        m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Intensity", 0);
+        m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Linear", lightLinear);
+        m_modelShader.SetFloat("lights[" + std::to_string(i) + "].Quadratic", lightQuadratic);
 
-    // }
+    }
 
     // m_modelShader.SetFloat("lights[10].Intensity", 0.25f);
     // m_modelShader.SetFloat("lights[3].Intensity", 0.25f);
@@ -1762,6 +1808,36 @@ bool Scene::LoadDepthShader()
         return true;
 }
 
+void Scene::SetCameraPosition(const Vec3 &p)
+{
+   m_camera.position = p;
+}
+
+void Scene::MoveCamera(int mode, float deltaTime)
+{
+   
+    // FORWARD,
+    // BACKWARD,
+    // LEFT,
+    // RIGHT
+    m_camera.ProcessKeyboard(mode, deltaTime);
+}
+void Scene::RotateCameraByMouse(float dt)
+{
+    m_camera.MouseView(dt);
+}
+
+
+void Scene::SetFollowOffset(const Vec3 &offset)
+{
+    m_followCamera.SetCameraOffset(offset);
+}
+void Scene::SetFollowCameraPosition(const Vec3 &p)
+{
+    m_followCamera.SetTargetPosition(p);
+}
+
+
 
 //*******************************************************************************************************
 //                                  scene SCRIPT
@@ -1778,6 +1854,8 @@ static JSValue js_scene_load_entity(JSContext *ctx, JSValueConst , int argc, JSV
     const char* name = JS_ToCString(ctx, argv[2]);
 
     u32 result =  Scene::Instance().AddEntity(fileName,name,castShadow);
+
+
 
     
 
@@ -2004,6 +2082,149 @@ static JSValue js_entity_play_animation(JSContext *ctx, JSValueConst , int argc,
     return JS_NULL;
 }
 
+static JSValue js_set_entity_postion (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 4)
+    {
+        return JS_ThrowReferenceError(ctx, "set_entity_position: Wrong number of arguments(index, x, y, z)");
+    }
+    int nodeIndex;
+    double x,y,z;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    JS_ToFloat64(ctx, &x,argv[1]);
+    JS_ToFloat64(ctx, &y,argv[2]);
+    JS_ToFloat64(ctx, &z,argv[3]);
+
+   // LogWarning("set_entity_position[%d] x[%f] y[%f] z[%f]",nodeIndex,x,y,z);
+
+    Entity *node = Scene::Instance().GetEntity(nodeIndex);
+    if (node)
+    {
+        node->SetPosition(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_entity_position: entity[%d] not found",nodeIndex);
+    }
+
+    
+    return JS_NULL;
+}
+
+
+
+static JSValue js_set_entity_rotation (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 4)
+    {
+        return JS_ThrowReferenceError(ctx, "set_entity_rotation: Wrong number of arguments(Index, x, y, z)");
+    }
+    int nodeIndex;
+    double x,y,z;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    JS_ToFloat64(ctx, &x,argv[1]);
+    JS_ToFloat64(ctx, &y,argv[2]);
+    JS_ToFloat64(ctx, &z,argv[3]);  
+
+   // LogWarning("set_entity_rotation[%d] x[%f] y[%f] z[%f]",nodeIndex,x,y,z);
+
+    Entity *node = Scene::Instance().GetEntity(nodeIndex);
+    if (node)
+    {
+        //node->SetRotation(0,Device::Instance().GetTicks()*0.001f,0);
+        node->SetRotation(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_entity_rotation: entity[%d] not found",nodeIndex);
+    }
+    
+    return JS_NULL;
+}
+
+static JSValue js_rotate_entity (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 5)
+    {
+        return JS_ThrowReferenceError(ctx, "rotate_entity : Wrong number of arguments(Index, angle,x, y, z)");
+    }
+    int nodeIndex;
+    double angle,x,y,z;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    
+    JS_ToFloat64(ctx, &angle,argv[1]);
+    JS_ToFloat64(ctx, &x,argv[2]);
+    JS_ToFloat64(ctx, &y,argv[3]);
+    JS_ToFloat64(ctx, &z,argv[4]);
+    
+   // LogWarning("set_entity_rotation[%d] x[%f] y[%f] z[%f]",nodeIndex,x,y,z);
+
+    Entity *node = Scene::Instance().GetEntity(nodeIndex);
+    if (node)
+    {
+        
+        node->Rotate(angle,x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "rotate_entity : entity[%d] not found",nodeIndex);
+    }
+    
+    return JS_NULL;
+}
+static JSValue js_set_entity_scale (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 4)
+    {
+        return JS_ThrowReferenceError(ctx, "set_entity_scale: Wrong number of arguments(Index, x, y, z)");
+    }
+    int nodeIndex;
+    double x,y,z;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    JS_ToFloat64(ctx, &x,argv[1]);
+    JS_ToFloat64(ctx, &y,argv[2]);
+    JS_ToFloat64(ctx, &z,argv[3]);  
+
+    Entity *node = Scene::Instance().GetEntity(nodeIndex);
+    if (node)
+    {
+        node->SetScale(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_entity_scale: entity[%d] not found",nodeIndex);
+    }
+    
+    return JS_NULL;
+}
+static JSValue js_set_entity_texture (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "set_entity_texture: Wrong number of arguments(modelIndex,materialIndex, textureIndex)");
+    }
+    int modelIndex, textureIndex,materilaIndex;
+    JS_ToInt32(ctx, &modelIndex,argv[0]);
+    JS_ToInt32(ctx, &materilaIndex,argv[1]);
+    JS_ToInt32(ctx, &textureIndex,argv[2]);
+
+    Entity *model = Scene::Instance().GetEntity(modelIndex);
+    if (model)
+    {
+      
+        
+           Texture2D *texture =TextureManager::Instance().GetTexture(textureIndex);
+           if (!texture)
+           {
+               return JS_ThrowReferenceError(ctx, "set_entity_texture:texture [%d]  not found",textureIndex);
+           }
+            model->SetTexture(materilaIndex,texture);
+
+        
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "set_entity_texture: model [%d] not found",modelIndex);
+    }
+  
+    
+    return JS_NULL;
+}
 //*************************************************************************************************
 //          NODE
 //*************************************************************************************************
@@ -2012,7 +2233,7 @@ static JSValue js_set_node_postion (JSContext *ctx, JSValueConst , int argc, JSV
 {
     if (argc != 4)
     {
-        return JS_ThrowReferenceError(ctx, "set_node_postion: Wrong number of arguments(nodeIndex, x, y, z)");
+        return JS_ThrowReferenceError(ctx, "set_node_position: Wrong number of arguments(nodeIndex, x, y, z)");
     }
     int nodeIndex;
     double x,y,z;
@@ -2025,6 +2246,9 @@ static JSValue js_set_node_postion (JSContext *ctx, JSValueConst , int argc, JSV
     if (node)
     {
         node->SetPosition(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_node_position: node[%d] not found",nodeIndex);
     }
 
     
@@ -2049,6 +2273,9 @@ static JSValue js_set_node_rotation (JSContext *ctx, JSValueConst , int argc, JS
     if (node)
     {
         node->SetRotation(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_node_rotation: node[%d] not found",nodeIndex);
     }
     
     return JS_NULL;
@@ -2072,6 +2299,9 @@ static JSValue js_set_node_scale (JSContext *ctx, JSValueConst , int argc, JSVal
     if (node)
     {
         node->SetScale(x,y,z);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_node_scale: node[%d] not found",nodeIndex);
     }
     
     return JS_NULL;
@@ -2432,9 +2662,13 @@ JSFunctionMap sceneFunctions =
 
 
 
+    {"set_entity_position", js_set_entity_postion},
+    {"set_entity_rotation", js_set_entity_rotation},
+    {"rotate_entity", js_rotate_entity},
+    {"set_entity_scale", js_set_entity_scale},
+    {"set_entity_texture", js_set_entity_texture},
 
-
-    {"set_node_postion", js_set_node_postion},
+    {"set_node_position", js_set_node_postion},
     {"set_node_rotation", js_set_node_rotation},
     {"set_node_scale", js_set_node_scale},
 
@@ -2825,9 +3059,150 @@ JSFunctionMap canvasFunctions =
 
 };
 
-//*************************************************************************************************
-//          canvas
-//*************************************************************************************************
+
+static JSValue js_move_camera (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 2)
+    {
+        return JS_ThrowReferenceError(ctx, "move_camera: Wrong number of arguments(mode,dt)");
+    }
+    int mode;
+    JS_ToInt32(ctx, &mode,argv[0]);
+    double dt;
+    JS_ToFloat64(ctx, &dt,argv[1]);
+    Scene::Instance().MoveCamera(mode,dt);
+    return JS_NULL;
+}
+
+static JSValue js_rotate_camera_by_mouse (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "rotate_camera_by_mouse: Wrong number of arguments(dt)");
+    }
+    double dt;
+    JS_ToFloat64(ctx, &dt,argv[0]);
+    Scene::Instance().RotateCameraByMouse(dt);
+    return JS_NULL;
+}
+
+static JSValue js_set_camera_position (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "set_camera_position: Wrong number of arguments(x,y,z)");
+    }
+    double x,y,z;
+    JS_ToFloat64(ctx, &x,argv[0]);
+    JS_ToFloat64(ctx, &y,argv[1]);
+    JS_ToFloat64(ctx, &z,argv[2]);
+    Vec3 pos(x,y,z);
+    Scene::Instance().SetCameraPosition(pos);
+    return JS_NULL;
+}
+
+static JSValue js_set_camera_yaw (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_camera_yaw: Wrong number of arguments(yaw)");
+    }
+    double yaw;
+    JS_ToFloat64(ctx, &yaw,argv[0]);
+    Scene::Instance().SetCameraYaw(yaw);
+    return JS_NULL;
+}
+
+static JSValue js_set_camera_pitch (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_camera_pitch: Wrong number of arguments(pitch)");
+    }
+    double pitch;
+    JS_ToFloat64(ctx, &pitch,argv[0]);
+    Scene::Instance().SetCameraPitch(pitch);
+    return JS_NULL;
+}
+
+static JSValue js_get_camera_position (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 0)
+    {
+        return JS_ThrowReferenceError(ctx, "get_camera_position: Wrong number of arguments()");
+    }
+    Vec3 p = Scene::Instance().GetCameraPosition();
+    JSValue x = JS_NewFloat64(ctx, p.x);
+    JSValue y = JS_NewFloat64(ctx, p.y);
+    JSValue z = JS_NewFloat64(ctx, p.z);
+    JSValue array = JS_NewArray(ctx);
+    JS_SetPropertyUint32(ctx, array, 0, x);
+    JS_SetPropertyUint32(ctx, array, 1, y);
+    JS_SetPropertyUint32(ctx, array, 2, z);
+    return array;
+}
+
+static JSValue js_set_follow_mode (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_follow_mode: Wrong number of arguments(mode)");
+    }
+    int mode;
+    JS_ToInt32(ctx, &mode,argv[0]);
+    Scene::Instance().SetFollowCameraMode(mode);
+    return JS_NULL;
+}
+
+static JSValue js_set_follow_offset (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "set_follow_offset: Wrong number of arguments(x,y,z)");
+    }
+    double x, y, z;
+    JS_ToFloat64(ctx, &x, argv[0]);
+    JS_ToFloat64(ctx, &y, argv[1]);
+    JS_ToFloat64(ctx, &z, argv[2]);
+    Vec3 offset = Vec3(x, y, z);
+
+    Scene::Instance().SetFollowOffset(offset);
+    return JS_NULL;
+}
+
+static JSValue js_set_follow_camera_position (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "set_follow_camera_position: Wrong number of arguments(x,y,z)");
+    }
+       double x, y, z;
+    JS_ToFloat64(ctx, &x, argv[0]);
+    JS_ToFloat64(ctx, &y, argv[1]);
+    JS_ToFloat64(ctx, &z, argv[2]);
+    Vec3 position = Vec3(x, y, z);
+    Scene::Instance().SetFollowCameraPosition(position);
+    return JS_NULL;
+}
+
+
+
+JSFunctionMap cameraFunctions =
+{
+
+    {"set_follow_mode", js_set_follow_mode},
+    {"set_follow_offset", js_set_follow_offset},
+    {"set_follow_position", js_set_follow_camera_position},
+    {"get_position", js_get_camera_position},
+    {"set_position", js_set_camera_position},
+    {"set_yaw", js_set_camera_yaw},
+    {"set_pitch", js_set_camera_pitch},
+    {"rotate_by_mouse", js_rotate_camera_by_mouse},
+    {"move", js_move_camera},
+
+
+
+};
 
 void Scene::RegisterFunctions(JSContext *ctx, JSValue global_obj)
 {
@@ -2843,6 +3218,14 @@ void Scene::RegisterFunctions(JSContext *ctx, JSValue global_obj)
      {
          JS_SetPropertyStr(ctx, core, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
      }
-    JS_SetPropertyStr(ctx, global_obj, "canvas", core);
+     JS_SetPropertyStr(ctx, global_obj, "canvas", core);
+
+
+     core = JS_NewObject(ctx);
+     for (const auto& func : cameraFunctions) 
+     {
+         JS_SetPropertyStr(ctx, core, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
+     }
+     JS_SetPropertyStr(ctx, global_obj, "camera", core);
 }
 

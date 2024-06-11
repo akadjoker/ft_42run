@@ -177,7 +177,7 @@ class ScreenManager
 
 var screens = new ScreenManager();
 
-
+const MAX_LIGHTS = 9;
 
 
 //***************************************************************************************** */
@@ -186,27 +186,94 @@ var screens = new ScreenManager();
 
 class MenuScreen extends Screen
 {
+
+    rotate = 0;
+    entity = 0;
   
     load()
     {
-       
-        console.log('MenuScreen carregando assets...');
+
+        assets.set_texture_load_flip(true);
+        assets.set_texture_path("assets/");
+        assets.load_texture("model/diffuse_back.jpg");
+        assets.load_texture("model/glasses.jpg");
+        assets.load_texture("model/luis_eyeL_hi.jpg");
+        assets.load_texture("model/luis_eyeR_hi.jpg");
+        assets.load_texture("model/face.jpg");
+        assets.load_texture("model/shoes.jpg");
+        assets.load_texture("model/skeen.jpg");
+
+
+
+
+        this.entity = scene.load_entity("assets/model/main.ah3d", "player", false);
+        scene.entity_add_animation(this.entity, "assets/model/idle.anim");
+        scene.entity_play(this.entity, "idle", 1, 0.25);
+
+
+        scene.set_entity_texture(this.entity, 0, 1);
+        scene.set_entity_texture(this.entity, 1, 2);
+        scene.set_entity_texture(this.entity, 2, 3);
+        scene.set_entity_texture(this.entity, 3, 4);
+        scene.set_entity_texture(this.entity, 4, 5);
+        scene.set_entity_texture(this.entity, 5, 6);
+        scene.set_entity_texture(this.entity, 6, 7);
+
+
+ 
+
+        scene.set_entity_position(this.entity, 6.0, -1.5, -2);
+        scene.set_entity_scale(this.entity, 0.2, 0.2, 0.2);
+        scene.set_entity_rotation(this.entity, 10, -70, 0);
+        
+        for (let i = 0; i < MAX_LIGHTS; i++)
+        {
+            scene.set_light_position(i, 1000, 1000, 1000);
+            scene.set_light_color(i, 0.01, 0.01, 0.01);
+            scene.set_light_intensity(i, 0.0001);
+        }
+
+        scene.set_light_position(0, 8.0, 10, 8);
+        scene.set_light_intensity(0, 0.2);
+        scene.set_light_color(0,0.2, 0.2, 0.01);
+
+
+        
+
     }
 
     render_gui()
     {
+        canvas.set_color(255, 255, 255);
         canvas.set_font(1);
-        canvas.print(screenWidth/2, screenHeight/2, 'menu' )
+        canvas.print(screenWidth / 2, screenHeight / 2, 'menu');
 
     }
 
     update(dt)  
     {
-            if (mouse.pressed(0))
-            {
-               
-                screens.setScreen('game');
-            }
+        camera.rotate_by_mouse(dt);
+        if (keyboard.down(Key.W))
+        {
+            camera.move(0, dt);   
+        } else 
+        if (keyboard.down(Key.S))
+        {
+            camera.move(1, dt);   
+        } else 
+        if (keyboard.down(Key.A))
+        {
+            camera.move(2, dt);   
+        } else 
+        if (keyboard.down(Key.D))
+        {
+            camera.move(3, dt);   
+        }
+        this.rotate += 0.5;
+
+       
+
+
     }
       
 }
