@@ -61,3 +61,9 @@ scene:
     set_light_color lightIndex, r, g, b
     set_light_position          lightIndex, x, y, z
     set_light_intensity         lightIndex, intensity
+
+
+core:
+    screen_width 
+    screen_height 
+    get_time 

@@ -499,6 +499,11 @@ void RenderBatch::SetColor(u8 r, u8 g, u8 b, u8 a)
 }
 
 
+void RenderBatch::SetAlpha(float a)
+{
+    colora = floatToUnsignedChar(a);
+}
+
 void RenderBatch::SetTexture(unsigned int id)
 {
     if (id == 0)

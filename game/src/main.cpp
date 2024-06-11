@@ -7,6 +7,11 @@
 #include <fstream>
 #include <sstream>
 
+#include <future>
+#include <functional>
+#include <thread>
+#include <chrono>
+#include <condition_variable>
 
 #include <quickjs-libc.h>
 #include <quickjs.h>
@@ -20,11 +25,47 @@ using JSFunctionMap = std::map<std::string, JSValue(*)(JSContext*, JSValueConst,
 
 
 int screenWidth = 1024;
-int screenHeight = 768;
+int screenHeight = 720;
 
 
 
+// template<class _Rep, class _Period>
+// std::future<void> TimerAsync(std::chrono::duration<_Rep, _Period> duration, std::function<void()> callback)
+// {
+//     return std::async(std::launch::async, [duration, callback]()
+//     {
+        
+//             std::this_thread::sleep_for(duration);
+//             callback();
 
+//     });
+// }
+
+
+std::condition_variable cv;
+std::mutex cv_m;
+bool ready = false;
+
+template<class _Rep, class _Period>
+void TimerAsync(std::chrono::duration<_Rep, _Period> duration, std::function<void()> callback)
+{
+    std::thread([duration, callback]()
+    {
+        std::this_thread::sleep_for(duration);
+        {
+            std::lock_guard<std::mutex> lk(cv_m);
+            ready = true;
+        }
+        cv.notify_one();
+    }).detach();
+
+    // Wait for the signal in the main thread
+    std::unique_lock<std::mutex> lk(cv_m);
+    cv.wait(lk, []{return ready;});
+
+    // Call the callback in the main thread
+    callback();
+}
 
 void execute(JSContext* ctx, const char* script, const char* filename) 
 {
@@ -89,6 +130,29 @@ inline void RegisterGlobalFunctions(JSContext* ctx, JSValue global_obj)
 int main()
 {
 
+    // std::cout<<"Timer Start" << std::endl;
+    // auto future = TimerAsync(std::chrono::seconds(0), [&]()
+    // {
+    //     std::cout<<"Timer async" << std::endl;
+    
+    // });
+
+    // while (true)
+    // {
+    //    // std::cout<<"processing" << std::endl;
+     
+    //     auto status = future.wait_for(std::chrono::seconds(0));
+    //     if (status == std::future_status::ready)
+    //     {
+    //               std::cout<<"Timer break" << std::endl;
+    //         break;
+    //     }
+    // }
+//       std::cout<<"Timer Finished" << std::endl;
+
+//     return 0;
+// }
+
     Device device;
     Driver driver;
     TextureManager textureManager;
@@ -132,6 +196,7 @@ int main()
     RegisterMouseFunctions(ctx, global_obj);
     RegisterAssetsFunctions(ctx, global_obj);
     scene.RegisterFunctions(ctx, global_obj);
+    RegisterCoreFunctions(ctx, global_obj);
 
 
     bool jsPanic = false;
@@ -154,11 +219,36 @@ int main()
     }
 
 
+
    
-    if (!jsPanic)
+//   TimerAsync(std::chrono::seconds(3), [](){
+//         std::cout << "Timer finished! Executing callback in main thread.\n";
+//     });
+
+
+    // TimerAsync(std::chrono::seconds(0), [&]()
+    // {
+    //          if (!jsPanic)
+    //         {
+    //             scene.LoadJs();
+    //         }
+    
+    // });
+
+    
+    TimerAsync(std::chrono::seconds(0), [&]()
     {
-        scene.LoadJs();
-    }
+        if (!jsPanic)
+        {
+            scene.LoadJs();
+        }
+    });
+
+
+            // if (!jsPanic)
+            // {
+            //     scene.LoadJs();
+            // }
 
     TextureManager::Instance().SetTexturePath("assets/textures/");
     TextureManager::Instance().FlipTextureOnLoad(true);

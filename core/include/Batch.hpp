@@ -44,7 +44,11 @@ public:
 
     void SetColor(const Color &color);
     void SetColor(float r , float g , float b);
+
+    
     void SetColor(u8 r, u8 g, u8 b, u8 a);
+
+    void SetAlpha(float a);
 
     void Line2D(int startPosX, int startPosY, int endPosX, int endPosY);
     void Line2D(const Vec2 &start,const Vec2 &end);

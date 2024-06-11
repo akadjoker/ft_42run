@@ -2472,6 +2472,18 @@ static JSValue js_canvas_set_color (JSContext *ctx, JSValueConst , int argc, JSV
     return JS_NULL;
 }
 
+static JSValue js_canvas_set_alpha (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)    
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_alpha: Wrong number of arguments(alpha)");
+    }
+    double alpha;
+    JS_ToFloat64(ctx, &alpha,argv[0]);
+    Scene::Instance().GetRenderBatch().SetAlpha(alpha);
+    return JS_NULL;
+}
+
 static JSValue js_canvas_line2d (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 4)
@@ -2726,7 +2738,9 @@ static JSValue js_canvas_print (JSContext *ctx, JSValueConst , int argc, JSValue
     {
         return JS_ThrowReferenceError(ctx, "print: Wrong number of arguments(text,x,y)");
     }
-    const char* text= JS_ToCString(ctx, argv[3]);
+    const char* text= JS_ToCString(ctx, argv[2]);
+
+   // LogWarning("text[%s] x[%f] y[%f]",text,argv[0],argv[1]);
     double x,y;
     JS_ToFloat64(ctx, &x,argv[0]);
     JS_ToFloat64(ctx, &y,argv[1]);
@@ -2785,6 +2799,8 @@ JSFunctionMap canvasFunctions =
 {
 
     {"set_color", js_canvas_set_color},
+    {"set_alpha", js_canvas_set_alpha},
+    
     {"line", js_canvas_line2d},
     {"circle", js_canvas_circle},
     {"rect", js_canvas_rect},

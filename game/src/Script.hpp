@@ -191,3 +191,50 @@ inline void RegisterAssetsFunctions(JSContext* ctx, JSValue global_obj)
     JS_SetPropertyStr(ctx, global_obj, "assets", core);
 }
 
+
+
+static  JSValue js_core_screen_width(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+
+    int w = Device::Instance().GetWidth();
+    return JS_NewInt32(ctx,w);
+    return JS_NULL;
+}
+
+static  JSValue js_core_screen_height(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    int h = Device::Instance().GetHeight();
+    return JS_NewInt32(ctx,h);
+    return JS_NULL;
+}
+
+static  JSValue js_core_get_time(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    double t = Device::Instance().GetTime();
+    return JS_NewFloat64(ctx,t);
+    return JS_NULL;
+}
+
+//GetTime
+
+
+
+
+JSFunctionMap coreFunctions =
+{
+    {"screen_width", js_core_screen_width},
+    {"screen_height", js_core_screen_height},
+    {"get_time", js_core_get_time},
+
+};
+
+inline void RegisterCoreFunctions(JSContext* ctx, JSValue global_obj) 
+{
+    JSValue core = JS_NewObject(ctx);
+    for (const auto& func : coreFunctions) 
+    {
+        JS_SetPropertyStr(ctx, core, func.first.c_str(), JS_NewCFunction(ctx, func.second, func.first.c_str(), 1));
+    }
+    JS_SetPropertyStr(ctx, global_obj, "core", core);
+}
+
