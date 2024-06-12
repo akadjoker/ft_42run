@@ -121,12 +121,14 @@ bool Mouse::Released(int button)
 
 float Mouse::X()
 {
-    return (int)((currentPosition.x + offset.x) * scale.x);
+    //return ((currentPosition.x + offset.x) * scale.x);
+    return currentPosition.x;
 }
 
 float Mouse::Y()
 {
-    return (int)((currentPosition.y + offset.y) * scale.y);
+   // return ((currentPosition.y + offset.y) * scale.y);
+    return currentPosition.y;
 }
 
 float Mouse::dX()
@@ -439,4 +441,10 @@ void Keyboard::setKeyState(int scancode, bool state)
        //   Log(0,"[KEYBOARD] Key %d %s %d",key,state?"down":"up",scancode);
     }
 
+}
+
+int Keyboard::toKey(int scancode)
+{
+    int key = ScancodeToKey[scancode];
+    return key;
 }

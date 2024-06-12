@@ -105,13 +105,25 @@ static  JSValue js_isMouseButtonUp(JSContext* ctx, JSValueConst this_val, int ar
     return JS_NewBool(ctx, Mouse::Up(button));
 }
 
+static  JSValue js_isMouseX(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+ 
+    return JS_NewFloat64(ctx, Mouse::X());
+}
 
+static  JSValue js_isMouseY(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    
+    return JS_NewFloat64(ctx, Mouse::Y());
+}
 
 JSFunctionMap mouseFunctions = {
     {"pressed", js_isMouseButtonPressed},
     {"down", js_isMouseButtonDown},
     {"up", js_isMouseButtonUp},
     {"released", js_isMouseButtonReleased},
+    {"x", js_isMouseX},
+    {"y", js_isMouseY},
 };
 
 inline void RegisterMouseFunctions(JSContext* ctx, JSValue global_obj) 
@@ -198,26 +210,45 @@ static  JSValue js_core_screen_width(JSContext* ctx, JSValueConst this_val, int 
 
     int w = Device::Instance().GetWidth();
     return JS_NewInt32(ctx,w);
-    return JS_NULL;
+  
 }
 
 static  JSValue js_core_screen_height(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
     int h = Device::Instance().GetHeight();
     return JS_NewInt32(ctx,h);
-    return JS_NULL;
+  
 }
 
 static  JSValue js_core_get_time(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
 {
     double t = Device::Instance().GetTime();
     return JS_NewFloat64(ctx,t);
+
+}
+static  JSValue js_core_set_exit(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    Device::Instance().SetShouldClose(true);
+    
     return JS_NULL;
 }
+static  JSValue js_core_set_key_exit(JSContext* ctx, JSValueConst this_val, int argc, JSValueConst* argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_key_exit: Wrong number of arguments(bool)");
+    }
 
-//GetTime
+    int key;
+
+    JS_ToInt32(ctx, &key, argv[0]);
+
+    Device::Instance().SetCloseKey(key);
 
 
+    
+    return JS_NULL;
+}
 
 
 JSFunctionMap coreFunctions =
@@ -225,6 +256,8 @@ JSFunctionMap coreFunctions =
     {"screen_width", js_core_screen_width},
     {"screen_height", js_core_screen_height},
     {"get_time", js_core_get_time},
+    {"exit", js_core_set_exit},
+    {"set_key_exit", js_core_set_key_exit},
 
 };
 

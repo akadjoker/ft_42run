@@ -128,6 +128,7 @@ bool Device::Create(int width, int height,const char* title,bool vzync)
             m_draw = 0;
             m_frame = 0;
             SetTargetFPS(60*10);
+            m_closekey = 256;
             m_width = width;
             m_height = height;
 
@@ -321,7 +322,11 @@ bool Device::Run()
             }
             case SDL_KEYDOWN:
             {
-                if (event.key.keysym.sym==SDLK_ESCAPE)
+
+                
+                
+               // LogWarning("[DEVICE] Key %d  %d",Keyboard::toKey(event.key.keysym.scancode),m_closekey);
+                if (Keyboard::toKey(event.key.keysym.scancode)==m_closekey)
                 {
                     m_shouldclose = true;
                     break;

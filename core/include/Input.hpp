@@ -73,9 +73,7 @@ public:
     static int getChar();
     static int getKey();
 
-
-   
-
+    static int toKey(int scancode);
 
     static void Update();
     static void Init();

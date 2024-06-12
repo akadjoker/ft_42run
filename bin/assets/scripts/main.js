@@ -7,6 +7,7 @@ include("assets/scripts/game.js");
 function load()
 {
   
+    core.set_key_exit(Key.F2);
     
     // let model = scene.create_cube(1, 1, 1);
     // let node = scene.create_static_node("cube", false); 
@@ -33,8 +34,8 @@ function load()
 
 
     screens.add(new MenuScreen("menu"));
-    
     screens.add(new GameScreen("game"));
+    screens.add(new ExitScreen("exit"));
 
     screens.setScreen("menu");  
 
@@ -59,8 +60,13 @@ function render()
 
 function update(dt)
 {
+
+    mouse_x = mouse.x();
+    mouse_y = mouse.y();
+
+  
  
-    screens.update(dt)
+    screens.update(dt);
 
    
    

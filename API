@@ -32,7 +32,7 @@ scene:
     enable_3d           bool 
     enable_2d           bool
     load_entity         fileName,name,castShadow
-    load_static_node    name,cast_Shadow
+    create_static_node   name,cast_Shadow
     load_model          fileName,name
 
     remove_model        index
@@ -75,3 +75,10 @@ core:
     screen_width 
     screen_height 
     get_time 
+
+mouse:
+    down 
+    pressed
+    up 
+    x
+    y

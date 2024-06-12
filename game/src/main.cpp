@@ -284,7 +284,7 @@ int main()
 //    escola->SetCullFace(2,false);
    
    
-
+ 
 //   StaticNode *escolaNodeA = scene.CreateStaticNode("scalA");
 //    escolaNodeA->AddModel(escola);
 //    escolaNodeA->scale.set(2.0f, 2.0f, 2.0f);

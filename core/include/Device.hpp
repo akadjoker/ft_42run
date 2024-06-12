@@ -34,6 +34,10 @@ public:
     double GetTime(void);
     u32  GetTicks(void) ;
 
+    void SetShouldClose(bool close) { m_shouldclose = close; }
+
+    void SetCloseKey(Sint32 key) { m_closekey = key; }
+
 
     SDL_Window*   GetWindow() const { return m_window; }
 
@@ -54,6 +58,7 @@ private:
     double m_frame;   
     double m_target;
     bool m_ready;
+    Sint32 m_closekey;
 
 
 };

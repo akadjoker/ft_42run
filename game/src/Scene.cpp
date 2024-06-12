@@ -1984,10 +1984,9 @@ static JSValue js_scene_create_pane(JSContext *ctx, JSValueConst , int argc, JSV
    {
     return JS_ThrowReferenceError(ctx, "create_plane: Wrong number of arguments(stacks,slices,tilesX,tilesY [uvTileX,uvTileY])");
    }
-   Scene::Instance().CreatePlane(stacks,slices,tilesX,tilesY,uvTileX,uvTileY);
-
-    
-    return JS_NewInt32(ctx,Scene::Instance().GetNodeCount()-1);
+    Scene::Instance().CreatePlane(stacks,slices,tilesX,tilesY,uvTileX,uvTileY);
+   
+    return JS_NewInt32(ctx,Scene::Instance().GetNodeCount());
 }
 
 static JSValue js_scene_create_quad(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
