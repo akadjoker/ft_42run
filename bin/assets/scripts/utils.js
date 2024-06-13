@@ -117,7 +117,9 @@ const Key =
 
 var screenWidth = 1024;
 var screenHeight = 720;
-
+let mouse_x = 0;
+let mouse_y = 0;
+const MAX_LIGHTS = 9;
 
 function RandomInt(min, max)
 {
@@ -443,6 +445,8 @@ class Screen
     {
     }
 
+ 
+
     addTween(tween)
     {
         this.tweens.push(tween);
@@ -454,7 +458,13 @@ class Screen
         this.sprites.push(sprite);
         return sprite;
     }
-    
+
+    GetSprite(index)
+    {
+        return this.sprites[index];
+    }
+
+
     OnRender()
     {
         this.render()
@@ -580,6 +590,8 @@ class ScreenManager
             }
     }
 
+
+
     render_gui()
     {       
 
@@ -616,3 +628,5 @@ class ScreenManager
 
 
 }
+
+var screens = new ScreenManager();

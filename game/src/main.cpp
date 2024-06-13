@@ -64,18 +64,22 @@ void TimerAsync(std::function<void()> callback)
     callback();
 }
 
-void execute(JSContext* ctx, const char* script, const char* filename) 
+bool execute(JSContext* ctx, const char* script, const char* filename) 
 {
+    bool sucess = true;
     JSValue result = JS_Eval(ctx, script, strlen(script), filename, JS_EVAL_TYPE_GLOBAL);
     if (JS_IsException(result)) 
     {
         JSValue exception = JS_GetException(ctx);
         const char* errorMessage = JS_ToCString(ctx, exception);
-        Logger::Instance().Error(errorMessage);
+        Logger::Instance().Error("%s executing %s",errorMessage, filename);
         JS_FreeCString(ctx, errorMessage);
         JS_FreeValue(ctx, exception);
+        sucess = false;
     }
     JS_FreeValue(ctx, result);
+
+    return sucess;
 }
 
 std::string readFile(const std::string& filePath) 
@@ -197,11 +201,50 @@ int main()
 
 
     bool jsPanic = false;
+    // if (System::Instance().FileExists("assets/scripts/utils.js"))
+    // {
+    //     std::string script = readFile("assets/scripts/utils.js");
+    //     execute(ctx, script.c_str(), "utils.js");
+    // } else 
+    // {
+    //     Logger::Instance().Error("File not found: assets/scripts/utils.js");
+    //     jsPanic = true;
+    // }
+
+    // if (System::Instance().FileExists("assets/scripts/game.js"))
+    // {
+    //     std::string script = readFile("assets/scripts/game.js");
+    //     execute(ctx, script.c_str(), "game.js");
+    // } else 
+    // {
+    //     Logger::Instance().Error("File not found: assets/scripts/game.js");
+    //     jsPanic = true;
+    // }
+
+    bool UseHotReload = true;
+    u64 loadTime = 0;
+    u64 lastLoadTime = 0;
+
+    u64 utilsLoadtime = System::Instance().GetFileModTime("assets/scripts/utils.js");
+    u64 gameLoadtime = System::Instance().GetFileModTime("assets/scripts/game.js"); 
+
+    u64 lastUtilsLoadtime = utilsLoadtime;
+    u64 lastGameLoadtime = gameLoadtime;
+
+    double reloadInterval = 5.0;
+    double lastReloadTime = 0.0;
+
 
     if (System::Instance().FileExists("assets/scripts/main.js"))
     {
         std::string script = readFile("assets/scripts/main.js");
-        execute(ctx, script.c_str(), "main.js");
+        if (execute(ctx, script.c_str(), "main.js"))
+        {
+            UseHotReload = true;
+            lastLoadTime = System::Instance().GetFileModTime("assets/scripts/main.js");
+            loadTime = lastLoadTime;
+           
+        }
     } else 
     {
         Logger::Instance().Error("File not found: assets/scripts/main.js");
@@ -238,6 +281,7 @@ int main()
         if (!jsPanic)
         {
             scene.LoadJs();
+           // scene.ReloadJs();
         }
     });
 
@@ -250,62 +294,93 @@ int main()
     TextureManager::Instance().SetTexturePath("assets/textures/");
     TextureManager::Instance().FlipTextureOnLoad(true);
 
-//     Model *cube =  scene.CreateCube(1.5f,1.5f,1.5f);
-//     StaticNode *node = scene.CreateStaticNode("cube",false);
-//     node->AddModel(cube);
-
-
-   
-//    Model *plane =  scene.CreatePlane(20, 20, 8, 4, 40.0f, 120.0f);
-   
-//    StaticNode * planeNode = scene.CreateStaticNode("floor",false);
-//    planeNode->scale.set(8.0f, 1.0f, 60.0f);   
-//    planeNode->AddModel(plane);
-
-
-
-
-//   Model *escola = scene.LoadModel("assets/escola/escola.h3d");
-
-//    Vec3 escolaSize = escola->GetSize();
-
-
-//    escola->SetTexture(0, TextureManager::Instance().Load("textura.jpg"));
-//    escola->SetTexture(1, TextureManager::Instance().Load("textura.jpg"));
-//    escola->SetTexture(2, TextureManager::Instance().Load("textura.jpg"));
-
-// //    escola->SetTextureNormal(0, TextureManager::Instance().Load("NormalMap.png"));
-// //    escola->SetTextureNormal(1, TextureManager::Instance().Load("NormalMap.png"));
-// //    escola->SetTextureNormal(2, TextureManager::Instance().Load("NormalMap.png"));
-
-
-//    escola->SetCullFace(0,false);
-//    escola->SetCullFace(1,false);
-//    escola->SetCullFace(2,false);
-   
-   
- 
-//   StaticNode *escolaNodeA = scene.CreateStaticNode("scalA");
-//    escolaNodeA->AddModel(escola);
-//    escolaNodeA->scale.set(2.0f, 2.0f, 2.0f);
-//    escolaNodeA->position.set(5.0f, 0.12f, escolaSize.x);
-//    float angle=90.0f;
-//    escolaNodeA->orientation.setEuler(0,ToRadians(angle),0);
-//    escolaNodeA->Update();
-
-
-//   StaticNode  *escolaNodeB = scene.CreateStaticNode("scalB");
-//    escolaNodeB->AddModel(escola);
-//    escolaNodeB->scale.set(2.0f, 2.0f, 2.0f);
-//    escolaNodeB->position.set(5.0f, 0.12f, -escolaSize.x);
-//    escolaNodeB->orientation.setEuler(0,ToRadians(angle),0);
-//    escolaNodeB->Update();
-
 
 
 
      while (device.Run())
     {
+
+              float deltaTime = device.GetFrameTime();
+
+
+     
+            if (Keyboard::Pressed(KEY_F4))
+            {
+                UseHotReload = !UseHotReload;
+            }
+
+            bool forceReload = false;
+
+            if (Keyboard::Pressed(KEY_F5))
+            {
+                forceReload = true;
+            }
+        
+
+        if (!jsPanic)
+        {
+            if (UseHotReload)
+            {
+
+                lastReloadTime += deltaTime;
+                if ( lastReloadTime > reloadInterval)
+                {
+                    loadTime = System::Instance().GetFileModTime("assets/scripts/main.js");
+                    utilsLoadtime = System::Instance().GetFileModTime("assets/scripts/utils.js");
+                    gameLoadtime = System::Instance().GetFileModTime("assets/scripts/game.js");
+
+
+                    if ( (loadTime > lastLoadTime) || (utilsLoadtime > lastUtilsLoadtime) || (gameLoadtime > lastGameLoadtime) )
+                    {
+                        Logger::Instance().Warning("Hot reloading... %ld  last: %ld  utils: %ld  game: %ld",loadTime, lastLoadTime,utilsLoadtime,gameLoadtime);
+                        forceReload = true;
+                    }
+
+                
+                    lastReloadTime = 0.0f;
+                }
+
+
+
+            }
+            if (forceReload)
+            {
+                 JS_FreeValue(ctx, global_obj);
+                 JS_FreeContext(ctx);
+                 ctx = JS_NewContext(rt);
+
+                    
+                js_std_add_helpers(ctx, -1, NULL); 
+                global_obj = JS_GetGlobalObject(ctx);
+                JS_FreeValue(ctx, global_obj);
+
+                RegisterGlobalFunctions(ctx, global_obj);
+                RegisterKeyboardFunctions(ctx, global_obj);
+                RegisterMouseFunctions(ctx, global_obj);
+                RegisterAssetsFunctions(ctx, global_obj);
+                scene.RegisterFunctions(ctx, global_obj);
+                RegisterCoreFunctions(ctx, global_obj);
+
+
+                std::string script = readFile("assets/scripts/main.js");
+                if (execute(ctx, script.c_str(), "main.js"))
+                {
+                    lastUtilsLoadtime = utilsLoadtime;
+                    lastGameLoadtime = gameLoadtime;
+                    lastLoadTime = loadTime;
+                   
+
+                    jsPanic = false;
+                    scene.CloseJs ();
+                    scene.InitJs(ctx, global_obj);
+                    scene.ReloadJs();
+                } else 
+                {
+                    jsPanic = true;
+                }
+
+            }
+        }
         
 
         
@@ -338,8 +413,7 @@ int main()
                 //   }
 
     
-         float deltaTime = device.GetFrameTime();
-
+        
         // if (Keyboard::Down(KEY_W))
         // {
         //     camera.ProcessKeyboard(FORWARD, deltaTime);

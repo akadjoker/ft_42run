@@ -97,6 +97,7 @@ public:
     void LoadJs();
     void CloseJs();
     void RenderJs();
+    void ReloadJs();
     void UpdateJs(float elapsed);
     void GuiJs();
 

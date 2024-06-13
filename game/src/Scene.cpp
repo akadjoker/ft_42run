@@ -754,8 +754,10 @@ void Scene::InitJs(JSContext *ctx, JSValue global_obj)
     js_in_functions["render"] = false;
     js_in_functions["collisions"] = false;
     js_in_functions["gui"] = false;
+    js_in_functions["reload"] = false;
+    
 
-     JSValue js_value = JS_GetPropertyStr(ctx, global_obj, "update");
+         JSValue js_value = JS_GetPropertyStr(ctx, global_obj, "update");
         if (JS_IsFunction(ctx, js_value)) 
         {
             js_functions["update"] = js_value;
@@ -795,6 +797,13 @@ void Scene::InitJs(JSContext *ctx, JSValue global_obj)
         {
             js_functions["load"] = js_value;
             js_in_functions["load"] = true;
+        }
+
+        js_value = JS_GetPropertyStr(ctx, global_obj, "reload");
+        if (JS_IsFunction(ctx, js_value)) 
+        {
+            js_functions["reload"] = js_value;
+            js_in_functions["reload"] = true;
         }
 }
 
@@ -853,6 +862,30 @@ void Scene::CloseJs()
     
     
 }
+
+void Scene::ReloadJs()
+{
+
+    if (js_in_functions["reload"])
+    {
+        if (!jsPanic)
+        {
+            JSValue val = JS_Call(ctx, js_functions["reload"], global_obj, 0, NULL);
+            if (JS_IsException(val)) 
+            {
+                JSValue exception = JS_GetException(ctx);
+                const char *error = JS_ToCString(ctx, exception);
+                Logger::Instance().Error("[reload] %s",error);
+                JS_FreeCString(ctx, error);
+                JS_FreeValue(ctx, exception);
+                jsPanic = true;
+            }   
+            JS_FreeValue(ctx, val);      
+        }
+    }
+
+}
+
 
 void Scene::RenderJs()
 {

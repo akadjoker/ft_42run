@@ -1,7 +1,7 @@
 include("assets/scripts/utils.js");
 include("assets/scripts/game.js");
 
-
+console.log("Starting...****************************");
 
 
 function load()
@@ -16,6 +16,35 @@ function load()
     // scene.node_add_model(node, model);
 
     assets.set_texture_path("assets/");
+    assets.set_texture_load_flip(true);
+      
+        // assets.load_texture("model/diffuse_back.jpg");
+        // assets.load_texture("model/glasses.jpg");
+        // assets.load_texture("model/luis_eyeL_hi.jpg");
+        // assets.load_texture("model/luis_eyeR_hi.jpg");
+        // assets.load_texture("model/face.jpg");
+        // assets.load_texture("model/shoes.jpg");
+        // assets.load_texture("model/skeen.jpg");
+
+
+
+
+         scene.load_entity("assets/model/main.ah3d", "player", false);
+        scene.entity_add_animation(0, "assets/model/idle.anim");
+        scene.entity_play(0, "idle", 1, 0.25);
+
+
+        // scene.set_entity_texture(0, 0, 1);
+        // scene.set_entity_texture(0, 1, 2);
+        // scene.set_entity_texture(0, 2, 3);
+        // scene.set_entity_texture(0, 3, 4);
+        // scene.set_entity_texture(0, 4, 5);
+        // scene.set_entity_texture(0, 5, 6);
+        // scene.set_entity_texture(0, 6, 7);
+
+
+        scene.create_plane(10, 10, 5,5, 1, 1);
+        scene.create_static_node("plane", true);
 
 //    let img = assets.load_texture("sprites/wabbit_alpha.png");
     
@@ -27,17 +56,17 @@ function load()
    // scene.enable_3d(false)
 
     
-    
+   assets.set_texture_load_flip(false);
     //canvas.load_font("assets/fonts/font3.fnt");
     canvas.load_font("assets/fonts/font1.fnt");
-    canvas.load_font("assets/fonts/font2.fnt");
+   // canvas.load_font("assets/fonts/font2.fnt");
 
 
-    screens.add(new MenuScreen("menu"));
-    screens.add(new GameScreen("game"));
-    screens.add(new ExitScreen("exit"));
+   screens.add(new MenuScreen("menu"));
+   screens.add(new GameScreen("game"));
+   screens.add(new ExitScreen("exit"));
 
-    screens.setScreen("menu");  
+   screens.setScreen("menu");  
 
 
    // screens.setScreen("menu");
@@ -50,6 +79,19 @@ function load()
 function unload()
 {
     
+} 
+
+function reload()
+{
+
+    screens.add(new MenuScreen("menu"));
+    screens.add(new GameScreen("game"));
+    screens.add(new ExitScreen("exit"));
+
+    screens.setScreen("menu");  
+
+    console.log("Reloading...****************************");
+  
 }
 
 function render()
@@ -76,18 +118,7 @@ function update(dt)
 
 function gui()
 {
-   
-   // canvas.set_color(255,255,255)
-    
-
-
-    // canvas.circle(100, 100, 23)
-    // canvas.rect(100, 100, 23, 23, true)
-    
-    // canvas.set_font(1);
-    
-    // canvas.print(10, 30,  "Screen: " + screens.currentID())
 
     screens.render_gui()
-    
+      
 }

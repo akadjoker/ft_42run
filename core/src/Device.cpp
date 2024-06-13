@@ -424,9 +424,12 @@ void Device::Flip()
         m_frame += waitTime;      // Total frame time: update + draw + wait
     }
 
-    std::string fps= std::to_string(GetFPS());
-    std::string title = std::string("FPS: ") + fps;
-    SDL_SetWindowTitle(m_window,  title.c_str());
+    // std::string fps= std::to_string(GetFPS());
+    // std::string title = std::string("FPS: ") + fps;
+    // SDL_SetWindowTitle(m_window,  title.c_str());
+
+    Keyboard::Update();
+    Mouse::Update();
 
 }
 

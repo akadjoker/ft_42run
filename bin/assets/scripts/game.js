@@ -2,10 +2,7 @@
 
 
 
-var screens = new ScreenManager();
-let mouse_x = 0;
-let mouse_y = 0;
-const MAX_LIGHTS = 9;
+
 
 
 //***************************************************************************************** */
@@ -54,7 +51,7 @@ class ExitScreen extends Screen
 
     load()
     {
-        this.transitionDuration = 1.5; 
+        this.transitionDuration = 2.0; 
         this.transitionProgress = 0;
 
         
@@ -82,52 +79,27 @@ class MenuScreen extends Screen
 {
 
     rotate = 0;
-    entity = 0;
+
+ 
 
   
     load()
     {
 
-        assets.set_texture_load_flip(true);
         assets.set_texture_path("assets/");
-        // assets.load_texture("model/diffuse_back.jpg");
-        // assets.load_texture("model/glasses.jpg");
-        // assets.load_texture("model/luis_eyeL_hi.jpg");
-        // assets.load_texture("model/luis_eyeR_hi.jpg");
-        // assets.load_texture("model/face.jpg");
-        // assets.load_texture("model/shoes.jpg");
-        // assets.load_texture("model/skeen.jpg");
 
 
 
-
-        this.entity = scene.load_entity("assets/model/main.ah3d", "player", false);
-        scene.entity_add_animation(this.entity, "assets/model/idle.anim");
-        scene.entity_play(this.entity, "idle", 1, 0.25);
-
-
-        // scene.set_entity_texture(this.entity, 0, 1);
-        // scene.set_entity_texture(this.entity, 1, 2);
-        // scene.set_entity_texture(this.entity, 2, 3);
-        // scene.set_entity_texture(this.entity, 3, 4);
-        // scene.set_entity_texture(this.entity, 4, 5);
-        // scene.set_entity_texture(this.entity, 5, 6);
-        // scene.set_entity_texture(this.entity, 6, 7);
-
-
-        let model =scene.create_plane(10, 10, 5,5, 1, 1);
-        let node = scene.create_static_node("plane", true);
-
-        scene.set_node_position(node, 25.0, 0.4, 0.0);
-        scene.set_node_scale(node, 10.0, 1, 10.0);
-        scene.set_node_rotation(node, 0, 0, 6);
-        scene.node_add_model(node, model);
+        scene.set_node_position(0, 25.0, 0.4, 0.0);
+        scene.set_node_scale(0, 10.0, 1, 10.0);
+        scene.set_node_rotation(0, 0, 0, 6);
+        scene.node_add_model(0, 0);
 
  
 
-        scene.set_entity_position(this.entity, 6.0, -1.5, -2);
-        scene.set_entity_scale(this.entity, 0.2, 0.2, 0.2);
-        scene.set_entity_rotation(this.entity, 10, -70, 0);
+        scene.set_entity_position(0, 6.0, -1.5, -2);
+        scene.set_entity_scale(0, 0.2, 0.2, 0.2);
+        scene.set_entity_rotation(0, 10, -70, 0);
         
         for (let i = 0; i < MAX_LIGHTS; i++)
         {
@@ -184,16 +156,15 @@ class MenuScreen extends Screen
 
 
 
-
         
 
     }
 
     render_gui()
     {
-        canvas.set_color(255, 255, 255);
+        canvas.set_color(255, 0, 255);
         canvas.set_font(1);
-        canvas.print(screenWidth / 2, screenHeight / 2, 'menu');
+        canvas.print(100, 100, 'live coder ;)' );
 
     }
 
@@ -221,6 +192,11 @@ class MenuScreen extends Screen
        
 
 
+    }
+
+    reload()
+    {
+     
     }
       
 }
