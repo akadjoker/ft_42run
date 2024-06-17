@@ -809,7 +809,7 @@ class GameScreen extends Screen
         this.pulseForse = 0.0;
 
 
-        this.transitionDuration = 20.5; 
+        this.transitionDuration = 1.5; 
         this.transitionProgress = 1.0;
         this.doFadeIn = true;
         this.doFadeOut = false;
