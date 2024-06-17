@@ -45,14 +45,14 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 
 file(GLOB SOURCES "src/*.cpp")
-add_executable(game_main   ${SOURCES})
+add_executable(42run   ${SOURCES})
 
 target_include_directories(core PUBLIC include)
-target_link_libraries(game_main PRIVATE core quickjs ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+target_link_libraries(42run PRIVATE core quickjs ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 
-target_precompile_headers(game_main PRIVATE ../core/include/pch.h)
+target_precompile_headers(42run PRIVATE ../core/include/pch.h)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-     target_compile_options(game_main PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g -Winvalid-pch)
-     target_link_options(game_main PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g -Winvalid-pch) 
+     target_compile_options(42run PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g -Winvalid-pch)
+     target_link_options(42run PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g -Winvalid-pch) 
 endif()

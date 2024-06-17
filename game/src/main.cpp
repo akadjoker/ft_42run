@@ -186,7 +186,7 @@ int main()
 
 
     device = Device::Instance();
-    device.Create(screenWidth, screenHeight, "Engine", true);
+    device.Create(screenWidth, screenHeight, "42 Run", true);
 
  
 
