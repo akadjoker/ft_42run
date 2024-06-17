@@ -1,6 +1,6 @@
 project(core)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fexceptions -frtti -fno-strict-aliasing")
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -24,13 +24,12 @@ add_compile_options(
 )
 
 file(GLOB SOURCES "src/*.cpp")
-
 add_library(core STATIC  ${SOURCES})
 
 
-target_include_directories(core PUBLIC include src)
+target_include_directories(core PUBLIC include)
 
-target_precompile_headers(core PUBLIC src/pch.h)
+target_precompile_headers(core PUBLIC include/pch.h)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
      target_compile_options(core PRIVATE -fsanitize=address -fsanitize=undefined -fsanitize=leak -g -Winvalid-pch)

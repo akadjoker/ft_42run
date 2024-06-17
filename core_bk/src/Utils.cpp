@@ -381,25 +381,18 @@ const char *System::GetPrevDirectoryPath(const char *dirPath)
     return prevDirPath;
 }
 
- char *System::GetWorkingDirectory()
+const char *System::GetWorkingDirectory()
 {
-    
-   return SDL_GetBasePath();
-   
+    static char currentDir[256];
+    GETCWD(currentDir, 256);
+    return currentDir;
 }
 
- char *System::GetApplicationDirectory()
+const char *System::GetApplicationDirectory()
 {
     static char appDir[256];
-
-    if (GETCWD(appDir, sizeof(appDir)) != NULL) 
-    {
-        return appDir;
-    } else 
-    {
-        LogError("Failed to get application directory");
-        return NULL;
-    }
+    GETCWD(appDir, 256);
+    return appDir;
 }
 
 bool System::ChangeDirectory(const char *dir)

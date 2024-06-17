@@ -22,112 +22,12 @@ float lightLinear = 0.0334f;
 float lightQuadratic = 0.0510f;
 float lightIntensity =1.1679f;
 bool useBloom = true;
-struct Cascade
-{
-    float splitDepth;
-    Mat4 viewProjMatrix;
 
-};
-
-CascadeShadow depthBuffer;
-RenderQuad  quadRender;
 const unsigned int SHADOW_WIDTH = 2048, SHADOW_HEIGHT = 2048;
-const int SHADOW_MAP_CASCADE_COUNT = 4;
-Cascade cascades[SHADOW_MAP_CASCADE_COUNT];
-Vec3 lightPosition = Vec3(0.5f, 4.0f,  7.5f);
-TextureBuffer renderTexture;
 
 
 
-void updateCascades(float nearClip, float farClip, const Mat4 & view, const Mat4 & proj,const Vec3 & lightPos)
-	{
-		float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
-     	float cascadeSplitLambda = 0.95f;
 
-		float clipRange = farClip - nearClip;
-
-		float minZ = nearClip;
-		float maxZ = nearClip + clipRange;
-
-		float range = maxZ - minZ;
-		float ratio = maxZ / minZ;
-
-        for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++)
-        {
-            float p = (i + 1) / static_cast<float>(SHADOW_MAP_CASCADE_COUNT);
-			float log = minZ * Pow(ratio, p);
-			float uniform = minZ + range * p;
-			float d = cascadeSplitLambda * (log - uniform) + uniform;
-			cascadeSplits[i] = (d - nearClip) / clipRange;
-        }
-	
-		// Calculate orthographic projection matrix for each cascade
-		float lastSplitDist = 0.0;
-		for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) 
-        {
-			float splitDist = cascadeSplits[i];
-
-			Vec3 frustumCorners[8] = 
-            {
-				Vec3(-1.0f,  1.0f, 0.0f),
-				Vec3( 1.0f,  1.0f, 0.0f),
-				Vec3( 1.0f, -1.0f, 0.0f),
-				Vec3(-1.0f, -1.0f, 0.0f),
-				Vec3(-1.0f,  1.0f,  1.0f),
-				Vec3( 1.0f,  1.0f,  1.0f),
-				Vec3( 1.0f, -1.0f,  1.0f),
-				Vec3(-1.0f, -1.0f,  1.0f),
-			};
-
-			// Project frustum corners into world space
-			Mat4 invCam =Mat4::Inverse(proj * view);   
-			for (u32 j = 0; j < 8; j++) 
-            {
-				Vec4 invCorner = invCam * Vec4(frustumCorners[j], 1.0f);
-                Vec4 div = invCorner / invCorner.w;
-				frustumCorners[j] = Vec3(div.x, div.y, div.z);
-			}
-
-			for (u32 j = 0; j < 4; j++) 
-            {
-				Vec3 dist = frustumCorners[j + 4] - frustumCorners[j];
-				frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
-				frustumCorners[j] = frustumCorners[j] + (dist * lastSplitDist);
-			}
-
-			// Get frustum center
-			Vec3 frustumCenter = Vec3(0.0f);
-			for (u32 j = 0; j < 8; j++) 
-            {
-				frustumCenter += frustumCorners[j];
-			}
-			frustumCenter /= 8.0f;
-
-			float radius = 0.0f;
-			for (u32 j = 0; j < 8; j++) 
-            {
-				float distance = Vec3::Length(frustumCorners[j] - frustumCenter);
-				radius = Max(radius, distance);
-			}
-			radius = Ceil(radius * 16.0f) / 16.0f;
-
-			Vec3 maxExtents = Vec3(radius);
-			Vec3 minExtents = -maxExtents;
-
-			Vec3 lightDir = Vec3::Normalize(-lightPos);
-			Mat4 lightViewMatrix  = Mat4::LookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, Vec3(0.0f, 1.0f, 0.0f));
-			Mat4 lightOrthoMatrix = Mat4::Ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
-
-
-      
-
-			// Store split distance and matrix in cascade
-			cascades[i].splitDepth = (nearClip + splitDist * clipRange) * -1.0f;
-			cascades[i].viewProjMatrix = lightOrthoMatrix * lightViewMatrix;
-
-			lastSplitDist = cascadeSplits[i];
-		}
-	}
 
 
 Scene*  Scene::m_singleton = 0x0;
@@ -291,6 +191,95 @@ void Scene::SetLightIntensity(u32 index,float intensity)
     }
 
 }
+void Scene::updateCascades(float nearClip, float farClip, const Vec3 & lightPos)
+	{
+		float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
+     	float cascadeSplitLambda = 0.95f;
+
+		float clipRange = farClip - nearClip;
+
+		float minZ = nearClip;
+		float maxZ = nearClip + clipRange;
+
+		float range = maxZ - minZ;
+		float ratio = maxZ / minZ;
+
+        for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++)
+        {
+            float p = (i + 1) / static_cast<float>(SHADOW_MAP_CASCADE_COUNT);
+			float log = minZ * Pow(ratio, p);
+			float uniform = minZ + range * p;
+			float d = cascadeSplitLambda * (log - uniform) + uniform;
+			cascadeSplits[i] = (d - nearClip) / clipRange;
+        }
+	
+		// Calculate orthographic projection matrix for each cascade
+		float lastSplitDist = 0.0;
+		for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++) 
+        {
+			float splitDist = cascadeSplits[i];
+
+			Vec3 frustumCorners[8] = 
+            {
+				Vec3(-1.0f,  1.0f, 0.0f),
+				Vec3( 1.0f,  1.0f, 0.0f),
+				Vec3( 1.0f, -1.0f, 0.0f),
+				Vec3(-1.0f, -1.0f, 0.0f),
+				Vec3(-1.0f,  1.0f,  1.0f),
+				Vec3( 1.0f,  1.0f,  1.0f),
+				Vec3( 1.0f, -1.0f,  1.0f),
+				Vec3(-1.0f, -1.0f,  1.0f),
+			};
+
+			// Project frustum corners into world space
+			Mat4 invCam =Mat4::Inverse(projectionMatrix * viewMatrix);   
+			for (u32 j = 0; j < 8; j++) 
+            {
+				Vec4 invCorner = invCam * Vec4(frustumCorners[j], 1.0f);
+                Vec4 div = invCorner / invCorner.w;
+				frustumCorners[j] = Vec3(div.x, div.y, div.z);
+			}
+
+			for (u32 j = 0; j < 4; j++) 
+            {
+				Vec3 dist = frustumCorners[j + 4] - frustumCorners[j];
+				frustumCorners[j + 4] = frustumCorners[j] + (dist * splitDist);
+				frustumCorners[j] = frustumCorners[j] + (dist * lastSplitDist);
+			}
+
+			// Get frustum center
+			Vec3 frustumCenter = Vec3(0.0f);
+			for (u32 j = 0; j < 8; j++) 
+            {
+				frustumCenter += frustumCorners[j];
+			}
+			frustumCenter /= 8.0f;
+
+			float radius = 0.0f;
+			for (u32 j = 0; j < 8; j++) 
+            {
+				float distance = Vec3::Length(frustumCorners[j] - frustumCenter);
+				radius = Max(radius, distance);
+			}
+			radius = Ceil(radius * 16.0f) / 16.0f;
+
+			Vec3 maxExtents = Vec3(radius);
+			Vec3 minExtents = -maxExtents;
+
+			Vec3 lightDir = Vec3::Normalize(-lightPos);
+			Mat4 lightViewMatrix  = Mat4::LookAt(frustumCenter - lightDir * -minExtents.z, frustumCenter, Vec3(0.0f, 1.0f, 0.0f));
+			Mat4 lightOrthoMatrix = Mat4::Ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
+
+
+      
+
+			// Store split distance and matrix in cascade
+			cascades[i].splitDepth = (nearClip + splitDist * clipRange) * -1.0f;
+			cascades[i].viewProjMatrix = lightOrthoMatrix * lightViewMatrix;
+
+			lastSplitDist = cascadeSplits[i];
+		}
+	}
     
 
 Model *Scene::CreateCube(float width, float height, float length)
@@ -490,6 +479,8 @@ void Scene::Init()
     batch.Init(2, 1024 * 8);
 
     font = new Font();
+
+    lightPosition.set(0.5f, 4.0f,  7.5f);
 
     font->LoadDefaultFont();
     font->SetBatch(&batch);
@@ -1055,7 +1046,7 @@ void Scene::Render()
     if (do3D)
     {
     
-       updateCascades(m_camera.getNearClip(), m_camera.getFarClip(),viewMatrix, projectionMatrix, lightPosition);
+       updateCascades(m_camera.getNearClip(), m_camera.getFarClip(), lightPosition);
 
 
 
@@ -1077,7 +1068,7 @@ void Scene::Render()
         glCullFace(GL_FRONT);
         depthBuffer.Begin();
 
-            for (u32 j = 0; j < SHADOW_MAP_CASCADE_COUNT; j++)
+                      for (u32 j = 0; j < SHADOW_MAP_CASCADE_COUNT; j++)
             {
 
                 depthBuffer.Set(j);
@@ -1101,9 +1092,10 @@ void Scene::Render()
                     if (!entity->shadow || !entity->visible) continue;
                     Mat4 mat = entity->GetRelativeTransformation();
                     m_depthShader.SetMatrix4("model", mat.x);
-                    for (u32 b = 0; b < entity->bones.size(); b++)
+                    for (u32 b = 0; b < entity->numBones(); b++)
                     {
-                        m_depthShader.SetMatrix4(System::Instance().TextFormat("Joints[%d]", b), entity->bones[b].x); // model.bones
+                        const Mat4 &m = entity->GetBone(b);
+                        m_depthShader.SetMatrix4(System::Instance().TextFormat("Joints[%d]", b), m.x); // model.bones
                     }
                     entity->Render();
                 }
@@ -1196,9 +1188,10 @@ void Scene::Render()
         if (!entity->visible) continue;
         Mat4 mat = entity->GetRelativeTransformation();
         m_modelShader.SetMatrix4("model", mat.x);
-        for (u32 b = 0; b < entity->bones.size(); b++)
+        for (u32 b = 0; b < entity->numBones(); b++)
         {
-             m_modelShader.SetMatrix4(System::Instance().TextFormat("Joints[%d]", b), entity->bones[b].x); // model.bones
+            const Mat4 &m = entity->GetBone(b);
+            m_modelShader.SetMatrix4(System::Instance().TextFormat("Joints[%d]", b), m.x); // model.bones
         }
         entity->Render();
     }
@@ -2266,7 +2259,7 @@ static JSValue js_entity_frame(JSContext *ctx, JSValueConst , int argc, JSValueC
     Entity *entity = Scene::Instance().GetEntity(entityIndex);
     if (entity)
     {
-        frame = entity->animator->GetCurrentFrame() ;
+        frame = entity->GetAnimator()->GetCurrentFrame() ;
         return JS_NewFloat64(ctx,frame);
     } else 
     {
@@ -2291,7 +2284,7 @@ static JSValue js_entity_stop(JSContext *ctx, JSValueConst , int argc, JSValueCo
     Entity *entity = Scene::Instance().GetEntity(entityIndex);
     if (entity)
     {
-        entity->animator->Stop();
+        entity->GetAnimator()->Stop();
         } else 
     {
          JS_ThrowReferenceError(ctx, "get_entity_frame: entity[%d] not found",entityIndex);
@@ -2314,7 +2307,7 @@ static JSValue js_entity_is_ended(JSContext *ctx, JSValueConst , int argc, JSVal
         Entity *entity = Scene::Instance().GetEntity(entityIndex);
     if (entity)
     {
-       result = entity->animator->IsEnded();
+       result = entity->GetAnimator()->IsEnded();
         return JS_NewBool(ctx,result);
     } else 
     {
@@ -2338,7 +2331,7 @@ static JSValue js_entity_animation_name(JSContext *ctx, JSValueConst , int argc,
     Entity *entity = Scene::Instance().GetEntity(entityIndex);
     if (entity)
     {
-        std::string name =entity->animator->GetCurrentAnimationName();
+        std::string name =entity->GetAnimator()->GetCurrentAnimationName();
         return JS_NewString(ctx, name.c_str());
     } else 
     {

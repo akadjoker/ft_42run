@@ -9,16 +9,13 @@
 #include "Utils.hpp"
 class Node;
 
-
-
-
 struct CORE_PUBLIC Script
 {
         Script(){id=0;name="";node=nullptr;};
         virtual ~Script(){};
 
         virtual void Load(){};
-        virtual void Update(float dt)=0;
+        virtual void Update()=0;
         virtual void UnLoad(){};
 
         int id;
@@ -32,20 +29,7 @@ struct CORE_PUBLIC Script
 class CORE_PUBLIC Node
 {
 
-    private:
-        std::vector<Script *> scripts;
-
-
-    
-
     public:
-    enum  NodeType
-    {
-        DEFAULT=0,
-        STATIC,
-        ENTITY,
-        JOINT    
-    };
 
     Vec3 position;
     Vec3 scale;
@@ -55,27 +39,49 @@ class CORE_PUBLIC Node
     Mat4 LocalWorld;
 
     Node *parent;
-    
+    std::vector<Script *> scripts;
+
     bool shadow;
     bool visible;
     bool active;
     bool done;
     u64  id{0};
-    NodeType type;
 
     std::string name;
     std::string parentName;
 
-    Node();
-    virtual ~Node();
-
-    Script *AddScript(Script *s);
-    bool HasScript(const std::string &s);
-    bool RemoveScript(const std::string &s);
-
-    void SetParent(Node *p)
+    Node()
     {
-        parent = p;
+        name = "";
+        parent = nullptr;
+        position.set(0, 0, 0);
+        scale.set(1, 1, 1);
+        orientation.identity();
+        AbsoluteTransformation.identity();
+        shadow = false;
+        visible = true;
+        active = true;
+        done = false;
+        
+    }
+
+    Script *AddScript(Script *s)
+    {
+        s->node = this;
+        s->Load();
+        scripts.push_back(s);
+        return s;
+    }
+
+    virtual ~Node()
+    {
+        for (u32 i = 0; i < scripts.size(); i++)
+        {
+            
+            scripts[i]->UnLoad();
+            scripts[i]->node = nullptr;
+            delete scripts[i];
+        }
     }
 
     void SetPosition(const Vec3 &p) 
@@ -95,7 +101,10 @@ class CORE_PUBLIC Node
 
     void SetRotation( float x, float y, float z)
     {
-       orientation.setEuler(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
+        //Quaternion q;
+        //q.rotate(Vec3(T(x), ToRadians(y), ToRadians(z)));
+        orientation.setEuler(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
+        // orientation.rotate(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
     }
 
     void Rotate(float angle, float x, float y, float z)
@@ -103,6 +112,11 @@ class CORE_PUBLIC Node
         Quaternion q;
         q.rotate(angle, x, y, z);
         orientation *= q ;
+
+        // orientation.rotate(angle, x, y, z) * orientation;
+        //  q.rotate(Vec3(T(x), ToRadians(y), ToRadians(z)));
+        //  orientation.rotate(angle, x, y, z);
+        //   orientation.rotate(Vec3(ToRadians(x), ToRadians(y), ToRadians(z)));
     }
 
     void SetRotation(const Quaternion &q)
@@ -120,7 +134,33 @@ class CORE_PUBLIC Node
         scale.set(x, y, z);
     }
 
-    const Mat4 GetRelativeTransformation();
+    
+
+    const Mat4 GetRelativeTransformation()
+    {
+        
+        // Mat4 mScale = Mat4::Scale(scale.x, scale.y, scale.z);
+        // Mat4 mRotate = Mat4::Rotate(orientation);
+        // Mat4 mTranslate = Mat4::Translate(position.x, position.y, position.z);
+
+
+        // LocalWorld =mTranslate * mRotate *  mScale;
+
+         LocalWorld = Mat4::Scale( scale.x, scale.y, scale.z );
+         LocalWorld.rotate(orientation);
+         LocalWorld.translate( position.x, position.y, position.z );
+
+        if (parent != nullptr)
+        {
+            Mat4 m_absTrans;
+            Mat4::fastMult43(m_absTrans, parent->AbsoluteTransformation, LocalWorld);
+            return m_absTrans;
+        }
+        else
+        {
+            return LocalWorld;
+        }
+    }
 
     void UpdateAbsolutePosition()
     {
@@ -133,7 +173,7 @@ class CORE_PUBLIC Node
         UpdateAbsolutePosition();
         for (u32 i = 0; i < scripts.size(); i++)
         {
-            scripts[i]->Update(1);
+            scripts[i]->Update();
         }
     }
     virtual void Render()
@@ -165,15 +205,18 @@ class CORE_PUBLIC Node
     {
         return orientation;
     }
+    Vec3 getWorldPosition()
+    {
+             return Mat4::Transform(AbsoluteTransformation, position);
+    }
 
-     Vec3 getWorldPosition()
-    {
-        return Mat4::Transform(AbsoluteTransformation, position);
-    }
-    Vec3 getWorldScale()
-    {
-        return Mat4::Transform(AbsoluteTransformation, scale);
-    }
+    // void Rotate(float angle,  float x, float y, float z)
+    // {
+
+    //     orientation.rotate(angle, x, y, z);
+    // }
+
+
     void SetName(const std::string &n){name = n;}
 };
 
@@ -183,7 +226,7 @@ class CORE_PUBLIC Joint : public Node
 {
     public:
         Mat4 offset;
-        Joint() : Node()    {  type = Node::DEFAULT;     }
+        Joint() : Node()    {       }
         virtual ~Joint()    {       }
         void Render() override;
 
@@ -200,6 +243,8 @@ class CORE_PUBLIC Model
 
         Mesh *AddMesh(const VertexFormat& vertexFormat,u32 material =0, bool dynamic = false);
         Material *AddMaterial();
+
+        
 
         bool Load(const std::string &fileName,const VertexFormat& vertexFormat);
 
@@ -246,9 +291,16 @@ class CORE_PUBLIC StaticNode : public Node
     public:
         StaticNode();
         virtual ~StaticNode();
+
+
         void AddModel(Model *model);
+    
+
         void Render() override;
+
         void RenderNoMaterial();
+
+
         void Release() override;
 
     private:

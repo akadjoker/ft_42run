@@ -744,7 +744,7 @@ class Obstacle extends Entity
   
     load()
     {
-        console.log("create object  " + this.name+ " " + this.node);
+      //  console.log("create object  " + this.name+ " " + this.node);
         
     }
     render()
@@ -780,7 +780,7 @@ class Coin extends Entity
   
     load()
     {
-        console.log("create object " + this.name);
+      //  console.log("create object " + this.name);
         this.angle = 0;
         
     }

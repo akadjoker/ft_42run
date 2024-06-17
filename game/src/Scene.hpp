@@ -12,7 +12,10 @@
 #include "Buffer.hpp"
 #include <quickjs.h>
 #include "Camera.hpp"
+
 const int MAX_LIGHTS = 10;
+const int SHADOW_MAP_CASCADE_COUNT = 4;
+
 
 
 class   Scene
@@ -177,10 +180,23 @@ private:
     bool jsPanic;
 
 private:
-   
+    
+    struct Cascade
+    {
+        float splitDepth;
+        Mat4 viewProjMatrix;
 
+    };
+
+    CascadeShadow depthBuffer;
+    RenderQuad  quadRender;
+
+    Cascade cascades[SHADOW_MAP_CASCADE_COUNT];
+    Vec3 lightPosition;
+    TextureBuffer renderTexture;
 
     bool LoadModelShader();
     bool LoadDepthShader();
     void RenderLight(int index);
+    void updateCascades(float nearClip, float farClip, const Vec3 &lightPos);
 };

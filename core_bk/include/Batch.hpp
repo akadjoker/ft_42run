@@ -62,8 +62,8 @@ public:
    
     
 
-    void Box(const BoundingBox &box);
-    void Box(const BoundingBox &box,const Mat4 &transform);
+   // void Box(const BoundingBox &box);
+   // void Box(const BoundingBox &box,const Mat4 &transform);
 
     void Cube(const Vec3 &position, float width, float height, float depth,bool wire=true);
     void Sphere(const Vec3 &position, float radius, int rings, int slices,bool wire=true);

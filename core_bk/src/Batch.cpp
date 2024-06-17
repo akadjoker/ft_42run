@@ -641,29 +641,29 @@ void RenderBatch::Line3D(const Vec3 &start, const Vec3 &end)
 }
 
 
-void RenderBatch::Box(const BoundingBox &box)
-{
-    SetMode(LINES);
+// void RenderBatch::Box(const BoundingBox &box)
+// {
+//     SetMode(LINES);
 
-    Line3D(box.min.x, box.min.y, box.min.z, box.max.x, box.min.y, box.min.z);
-    Line3D(box.max.x, box.min.y, box.min.z, box.max.x, box.max.y, box.min.z);
-    Line3D(box.max.x, box.max.y, box.min.z, box.min.x, box.max.y, box.min.z);
-    Line3D(box.min.x, box.max.y, box.min.z, box.min.x, box.min.y, box.min.z);
+//     Line3D(box.min.x, box.min.y, box.min.z, box.max.x, box.min.y, box.min.z);
+//     Line3D(box.max.x, box.min.y, box.min.z, box.max.x, box.max.y, box.min.z);
+//     Line3D(box.max.x, box.max.y, box.min.z, box.min.x, box.max.y, box.min.z);
+//     Line3D(box.min.x, box.max.y, box.min.z, box.min.x, box.min.y, box.min.z);
 
-    Line3D(box.min.x, box.min.y, box.max.z, box.max.x, box.min.y, box.max.z);
-    Line3D(box.max.x, box.min.y, box.max.z, box.max.x, box.max.y, box.max.z);
-    Line3D(box.max.x, box.max.y, box.max.z, box.min.x, box.max.y, box.max.z);
-    Line3D(box.min.x, box.max.y, box.max.z, box.min.x, box.min.y, box.max.z);
+//     Line3D(box.min.x, box.min.y, box.max.z, box.max.x, box.min.y, box.max.z);
+//     Line3D(box.max.x, box.min.y, box.max.z, box.max.x, box.max.y, box.max.z);
+//     Line3D(box.max.x, box.max.y, box.max.z, box.min.x, box.max.y, box.max.z);
+//     Line3D(box.min.x, box.max.y, box.max.z, box.min.x, box.min.y, box.max.z);
 
-    Line3D(box.min.x, box.min.y, box.min.z, box.min.x, box.min.y, box.max.z);
-    Line3D(box.max.x, box.min.y, box.min.z, box.max.x, box.min.y, box.max.z);
-    Line3D(box.max.x, box.max.y, box.min.z, box.max.x, box.max.y, box.max.z);
-    Line3D(box.min.x, box.max.y, box.min.z, box.min.x, box.max.y, box.max.z);
+//     Line3D(box.min.x, box.min.y, box.min.z, box.min.x, box.min.y, box.max.z);
+//     Line3D(box.max.x, box.min.y, box.min.z, box.max.x, box.min.y, box.max.z);
+//     Line3D(box.max.x, box.max.y, box.min.z, box.max.x, box.max.y, box.max.z);
+//     Line3D(box.min.x, box.max.y, box.min.z, box.min.x, box.max.y, box.max.z);
 
 
   
     
-}
+// }
 
 void RenderBatch::Cube(const Vec3& position, float w, float h, float d, bool wire)
 {
