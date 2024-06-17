@@ -11,6 +11,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -mtune=native")
 
 add_compile_options(
     -Wextra
+    -Wall
     -Wno-sign-compare
     -Wno-missing-field-initializers
     -Wundef

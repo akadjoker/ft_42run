@@ -10,7 +10,6 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -w -fwrapv -O3 -Os -DNDEBUG")
 
 
 add_compile_options(
-    -Wextra
     -Wno-sign-compare
     -Wno-missing-field-initializers
     -Wundef

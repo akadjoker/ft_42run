@@ -739,8 +739,9 @@ void initModernExtensions( bool &r )
 bool initOpenGLExtensions( bool forceLegacyFuncs )
 {
 	if ( !getOpenGLVersion() )
+	{
 		return false;
-
+	}
 	bool r = true;
 	
 	if ( forceLegacyFuncs )
