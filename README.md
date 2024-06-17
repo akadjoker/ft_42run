@@ -1,5 +1,5 @@
 
-# 24 Run
+# 42 Run
 
 24 Run is a game where the player runs through an infinite school-themed world. The game is developed using OpenGL and features advanced graphics capabilities and game logic exposed to QuickJS.
 
@@ -7,6 +7,10 @@
     OpenGL Graphics Engine: Advanced rendering using OpenGL.
     
     Cascade Shadow Maps: Implementation of 4 cascade shadow maps for high-quality shadows.
+
+    One  directional light responsible for producing shadows.
+
+    Ten lights positioned to give light to the environment.
     
     GPU Skinning Animation: Character animation using GPU skinning with support for animation mixing.
     
