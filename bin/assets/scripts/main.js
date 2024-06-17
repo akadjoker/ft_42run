@@ -139,10 +139,10 @@ function load()
   //  console.log("escola depth: " + escolaDepth);
 
 
+    scene.set_model_culling(EscolaID, 0, false);
     scene.set_model_culling(EscolaID, 1, false);
-  //  scene.set_model_culling(EscolaID, 1, false);
-  //  scene.set_model_culling(EscolaID, 2, false);
- //   scene.set_model_culling(EscolaID, 3, false);
+    scene.set_model_culling(EscolaID, 2, false);
+    scene.set_model_culling(EscolaID, 3, false);
    // scene.scale_model_texture_coords(EscolaID, 1, 10.0, 10.0);
 
 
@@ -232,16 +232,6 @@ function load()
       
 
 
-    // PlayerID = scene.get_entity_id("player");
-    
-    //  ChairID = scene.get_model_id("chair");
-    //  EscolaID = scene.get_model_id("escola");
-    //  MacID = scene.get_model_id("mac");
-    //  TableID = scene.get_model_id("table");
-    //  VendingID = scene.get_model_id("vending");
-    
-    //  NodeEscolaA = scene.get_node_id("escolaA");
-    //  NodeEscolaB = scene.get_node_id("escolaB");
 
    screens.add(new MenuScreen("menu"));
    screens.add(new GameScreen("game"));
@@ -249,7 +239,6 @@ function load()
    screens.setScreen("menu");    
 
 
-   // screens.setScreen("menu");
 
 
 
@@ -262,35 +251,9 @@ function unload()
 
 function reload()
 {
-    EscolaID = scene.get_model_id("escola");
-    let escolaSize = scene.get_model_size(EscolaID);
-    escolaDepth = escolaSize.width * 4.0;
-    escolaAPosition= new Vec3 (70, 0, 8);
-    escolaBPosition = new Vec3(70 + escolaDepth, 0, 8);
-    
-
-    // PlayerID = scene.get_entity_id("player");
-    
-    //  ChairID = scene.get_model_id("chair");
-
-    //  MacID = scene.get_model_id("mac");
-    //  TableID = scene.get_model_id("table");
-    //  VendingID = scene.get_model_id("vending");
-    
-    //  NodeEscolaA = scene.get_node_id("escolaA");
-    //  NodeEscolaB = scene.get_node_id("escolaB");
-      
    
 
-    screens.add(new MenuScreen("menu"));
-    screens.add(new GameScreen("game"));
 
-
-    screens.setScreen("menu");  
-
-
-
-    console.log("Reloading...");
   
 }
 
@@ -303,6 +266,9 @@ function render()
 function update(dt)
 {
 
+    screenWidth = core.screen_width();
+    screenHeight = core.screen_height();
+    
     mouse_x = mouse.x();
     mouse_y = mouse.y();
 

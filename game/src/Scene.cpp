@@ -21,7 +21,7 @@ static int VertexElemntsCount =3;
 float lightLinear = 0.0334f;
 float lightQuadratic = 0.0510f;
 float lightIntensity =1.1679f;
-bool useBloom = false;
+bool useBloom = true;
 struct Cascade
 {
     float splitDepth;
@@ -1256,8 +1256,8 @@ if (do2D)
     batch.SetMatrix(view2D);
     GuiJs();
     batch.SetColor(255, 255, 255, 255);
-    font->SetFontSize(12);
-    font->Print(10, 10, System::Instance().TextFormat("FPS: %d", Device::Instance().GetFPS()));
+  //  font->SetFontSize(12);
+  //  font->Print(10, 10, System::Instance().TextFormat("FPS: %d", Device::Instance().GetFPS()));
 
     batch.Render();
 }

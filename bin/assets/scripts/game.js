@@ -70,8 +70,10 @@ class Menu extends Sprite
 
     render()
     {
+        this.x = screenWidth / 2;
         canvas.set_texture(TextureMenu);
         canvas.set_color(1, 1, 1);
+        canvas.set_alpha(1.0);
         let width = this.width;
         let height = this.height;
         batch.render(this.x-width/2, this.y-height/2, width, height);
@@ -101,7 +103,7 @@ class MenuScreen extends Screen
     load()
     {
 
-        this.transitionDuration = 2.5; 
+        this.transitionDuration = 1.5; 
         this.transitionProgress = 1.0;
         this.doFadeIn = true;
         this.doFadeOut = false;
@@ -111,8 +113,8 @@ class MenuScreen extends Screen
         assets.set_texture_path("assets/");
 
         scene.set_node_scale(NodeEscolaA, 4.0, 3.0, 3.5);
-        scene.set_node_position(NodeEscolaA, 10, escolaAPosition.y-0.1, -60);
-        scene.set_node_rotation(NodeEscolaA, 0, 90, 0);
+        scene.set_node_position(NodeEscolaA, 10, escolaAPosition.y-1.9, -60);
+        scene.set_node_rotation(NodeEscolaA, 6.2, 90, 0);
         
 
         scene.set_node_visible(NodeEscolaA, true);
@@ -126,9 +128,9 @@ class MenuScreen extends Screen
 
         scene.entity_play(PlayerID, "idle", 0, 0.25);
 
-        scene.set_entity_position(PlayerID, 8.0, -0.5, -2);
+        scene.set_entity_position(PlayerID, 8.0, -1.99, -2);
         scene.set_entity_scale(PlayerID, 0.2, 0.2, 0.2);
-        scene.set_entity_rotation(PlayerID, 0, -70, 0);
+        scene.set_entity_rotation(PlayerID, -1.2, -70, 0);
         
         for (let i = 0; i < MAX_LIGHTS; i++)
         {
@@ -244,24 +246,22 @@ class MenuScreen extends Screen
             }
             return;
         }
-        // camera.rotate_by_mouse(dt);
-        // if (keyboard.down(Key.W))
-        // {
-        //     camera.move(0, dt);   
-        // } else 
-        // if (keyboard.down(Key.S))
-        // {
-        //     camera.move(1, dt);   
-        // } else 
-        // if (keyboard.down(Key.A))
-        // {
-        //     camera.move(2, dt);   
-        // } else 
-        // if (keyboard.down(Key.D))
-        // {
-        //     camera.move(3, dt);   
-        // }
-        // this.rotate += 0.5;
+
+        if (MoveCamera) {
+            camera.rotate_by_mouse(dt);
+            if (keyboard.down(Key.W)) {
+                camera.move(0, dt);
+            } else
+                if (keyboard.down(Key.S)) {
+                    camera.move(1, dt);
+                } else
+                    if (keyboard.down(Key.A)) {
+                        camera.move(2, dt);
+                    } else
+                        if (keyboard.down(Key.D)) {
+                            camera.move(3, dt);
+                        }
+        }
 
        
 
@@ -300,6 +300,8 @@ class Player extends Entity
         this.distance = 0.0;
         this.mode = 0;//running 1 hit 
         this.jump_type = 0;
+
+        this.animation="run";
 
 
         // hit and bounce :O
@@ -365,22 +367,26 @@ class Player extends Entity
                     // console.log(this.next_distance + " " + this.next_type);
                     if (this.jump_type === 0)
                     {
-                        scene.entity_play(PlayerID, "jump", 2, 0.05);    
+                        scene.entity_play(PlayerID, "jump", 2, 0.05);  
+                        this.animation = "jump";
                     }else
                     if (this.jump_type === 1)
                     {
                         scene.entity_play(PlayerID, "jumpOver", 2, 0.25);
+                        this.animation = "jumpOver";
                         this.Velocity.x = 0.0;
                     } else 
                     if (this.jump_type === 2)
                     {
                         this.Velocity.x *= 0.99;
                         scene.entity_play(PlayerID, "jumpUp", 2, 0.25);
+                        this.animation = "jumpUp";
                     } else
                     if (this.jump_type === 3)
                     {
                         this.Velocity.x *= 0.99;
-                        scene.entity_play(PlayerID, "funJump", 2, 0.05);    
+                        scene.entity_play(PlayerID, "funJump", 2, 0.05);  
+                        this.animation = "funJump";
                     }
 
                     
@@ -433,6 +439,7 @@ class Player extends Entity
             {
                 this.mode = 0;
                 scene.entity_play(PlayerID, "run", 0, 0.25);
+                this.animation = "run";
             }
         } else
             if (this.mode === 2)//jump styles
@@ -454,6 +461,7 @@ class Player extends Entity
                         this.OnGround = true;
                         this.mode = 0;
                         scene.entity_play(PlayerID, "run", 0, 0.15);
+                        this.animation = "run";
                         this.reset();
                     }
                 } else 
@@ -471,6 +479,7 @@ class Player extends Entity
                         this.OnGround = true;
                         this.mode = 0;
                         scene.entity_play(PlayerID, "run", 0, 0.15);
+                        this.animation = "run";
                         this.reset();
                         
                     }
@@ -492,6 +501,7 @@ class Player extends Entity
                             this.OnGround = true;
                             this.mode = 0;
                             scene.entity_play(PlayerID, "run", 0, 0.15);
+                            this.animation = "run";
                             this.reset();
                             
                         }
@@ -509,6 +519,7 @@ class Player extends Entity
                                 this.OnGround = true;
                                 this.mode = 0;
                                 scene.entity_play(PlayerID, "run", 0, 0.15);
+                                this.animation = "run";
                                 this.reset();
                                 
                             }
@@ -542,9 +553,10 @@ class Player extends Entity
         }else 
         if (this.mode === 1)
         {
-                if (this.position.y < -1.1)
+           
+                if (this.position.y <= -0.85)
                 {
-                    this.position.y = -1.1;
+                    this.position.y = -0.85;
                 }
          }
    
@@ -584,10 +596,25 @@ class Player extends Entity
         this.hitting = true;
         this.Velocity.x -= this.hitt_force * this.MoveSpeed;
         scene.entity_play(PlayerID, "hit", 2, 0.25);
+        this.animation = "hit";
     }
 
     collide(entity)
     {
+
+        // let last_x = entity.position.x - 4.0;
+        // this.position.x = Lerp(this.position.x, last_x, 0.99);
+
+        let my_y = this.position.y;
+        let ob_y = entity.position.y;
+        let diff = my_y - ob_y;
+        let do_hit = false;
+        if ((this.animation === "run") && (this.OnGround==true))
+        {
+            do_hit = true;
+        } 
+
+       // console.log("diff " + diff +" "+this.animation);
 
        // console.log("collide" + entity.name);
         if (entity.name==='moeda')
@@ -598,37 +625,41 @@ class Player extends Entity
         } else  //['moeda', 'vending', 'mesa', 'cadeira','imac'];
         if (entity.name==='vending')
         {
-            this.hitt_force = 10.0;
-           // this.hit();
+            this.hitt_force = 7.0;
+            this.hit();
+            entity.kill();
         }
         if (entity.name==='mesa')
         {
          
             if (this.OnGround || !this.IsJumping)
             {
-                this.hitt_force = 8.0;
-                this.hit();
+                this.hitt_force = 6.0;
+                if (do_hit)
+                    this.hit();
             }
             
-          //  entity.kill();
+            entity.kill();
         }
         if (entity.name==='cadeira')
         {
             if (this.OnGround || !this.IsJumping || this.jump_type !== 2)
             {
                 this.hitt_force = 4.0;
-                this.hit();
+                if (do_hit)
+                    this.hit();
             }
-           // entity.kill();
+            entity.kill();
         }
         if (entity.name==='imac')
         {
             if (this.OnGround || !this.IsJumping)
             {
-                this.hitt_force = 2.0;
-                this.hit();
+                this.hitt_force = 4.0;
+                if (do_hit)
+                    this.hit();
             }
-          //  entity.kill();
+            entity.kill();
         }
         
     }
@@ -809,7 +840,7 @@ class GameScreen extends Screen
         this.pulseForse = 0.0;
 
 
-        this.transitionDuration = 1.5; 
+        this.transitionDuration = 2.5; 
         this.transitionProgress = 1.0;
         this.doFadeIn = true;
         this.doFadeOut = false;
@@ -825,7 +856,7 @@ class GameScreen extends Screen
     // scene.set_node_scale(0, 100.0, 1, 10.0);
     // scene.set_node_rotation(0, 0, 0, 0);
         // scene.node_add_model(0, 0);
-        scene.entity_play(PlayerID, "run", 0, 0.25);
+        scene.entity_play(PlayerID, "idle", 0, 0.25);
         scene.set_entity_rotation(PlayerID, 0, 90, 0);
 
         scene.set_node_visible(NodeEscolaA, true);
@@ -858,6 +889,7 @@ class GameScreen extends Screen
                        
                 this.isExit = true;
                 this.doFadeOut = true;
+                this.transitionDuration = 5.5; 
                         
                     let tween= new Tween(this.menu, 'y', screenHeight/2,-200, 800, Ease.easeInBack);
                     this.addTween(tween);
@@ -1018,13 +1050,15 @@ class GameScreen extends Screen
                 this.isFading = true;
                 if (this.transitionProgress < 0.9)
                 {
-                    this.doFadeIn = false;
                     scene.enable_3d(true);
                 }
                 if (this.transitionProgress < 0.0)
                 {
                     this.doFadeIn = false;
                     this.isFading = false;
+                    this.transitionProgress = 0.0;
+                    scene.entity_play(PlayerID, "run", 0, 0.25);
+  
                     
                 }
                 return;

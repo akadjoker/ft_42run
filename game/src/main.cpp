@@ -221,7 +221,7 @@ int main()
     //     jsPanic = true;
     // }
 
-    bool UseHotReload = true;
+    bool UseHotReload = false;
     u64 loadTime = 0;
     u64 lastLoadTime = 0;
 
@@ -240,7 +240,7 @@ int main()
         std::string script = readFile("assets/scripts/main.js");
         if (execute(ctx, script.c_str(), "main.js"))
         {
-            UseHotReload = true;
+            UseHotReload = false;
             lastLoadTime = System::Instance().GetFileModTime("assets/scripts/main.js");
             loadTime = lastLoadTime;
            
