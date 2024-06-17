@@ -138,6 +138,25 @@ function Random(max)
     return Math.floor(Math.random() * Math.floor(max));
 }
 
+function Lerp(a, b, t)
+{
+    return a + (b - a) * t;
+}
+
+function Distance(start, end)
+{
+    return (end - start);
+}
+
+function AbsDistance(start, end)
+{
+    return Math.abs(end - start);
+}
+function Clamp(x, min, max)
+{
+    return Math.min(Math.max(x, min), max);
+}
+
 class Batch 
 {
 
@@ -455,6 +474,7 @@ class Screen
 
     addSprite(sprite)
     {
+        sprite.update(0.1);
         this.sprites.push(sprite);
         return sprite;
     }
@@ -462,6 +482,12 @@ class Screen
     GetSprite(index)
     {
         return this.sprites[index];
+    }
+
+    Clear()
+    {
+        this.tweens = [];
+        this.sprites = [];
     }
 
 
@@ -472,15 +498,23 @@ class Screen
     OnRenderGui()
     {
         this.render_gui()
+        if (this.sprites.length == 0) return;
         this.sprites = this.sprites.filter(sprite => !sprite.done);
         this.sprites.forEach(sprite => sprite.render());
 
     }
     OnUpdate(dt)
     {
-        this.tweens = this.tweens.filter(tween => !tween.isComplete);
-        this.tweens.forEach(tween => tween.update(dt * 1000.0));
-        this.sprites.forEach(sprite => sprite.update(dt));
+        if (this.tweens.length > 0)
+        {
+            this.tweens = this.tweens.filter(tween => !tween.isComplete);
+            this.tweens.forEach(tween => tween.update(dt * 1000.0));
+        }
+        if (this.sprites.length > 0)
+        {
+            this.sprites.forEach(sprite => sprite.update(dt));
+        }
+        
         this.update(dt)
     }
 }
@@ -513,77 +547,93 @@ class ScreenManager
 
     setScreen(screenId)
     {
-        if (this.currentScreen )
-        {
-            if (this.transitioning) return;
-            //if (this.currentScreen.id === screenId) return;
-        }    
-        if (this.screens[screenId])
-        {
-            if (this.currentScreen)
-            {
-                console.log(`Transitioning from ${this.currentScreen.id} to ${screenId}`);
-                this.nextScreen = this.screens[screenId];
-                this.nextScreen.load();
-                this.transitioning = true;
-                this.transitionProgress = 0;
-                this.mode = 0;
-            } else
-            {
+         if (this.currentScreen )
+         {
+            
+             if (this.currentScreen.id === screenId) return;
+        }  
+        
+        this.nextScreen = this.screens[screenId];
+
+        // if (this.currentScreen )
+        // {
+        //     if (this.transitioning) return;
+        //     //if (this.currentScreen.id === screenId) return;
+        // }    
+        // if (this.screens[screenId])
+        // {
+        //     if (this.currentScreen)
+        //     {
+        //         console.log(`Transitioning from ${this.currentScreen.id} to ${screenId}`);
+        //         this.nextScreen = this.screens[screenId];
+        //         this.nextScreen.load();
+        //         this.transitioning = true;
+        //         this.transitionProgress = 0;
+        //         this.mode = 0;
+        //     } else
+        //     {
                
-                console.log(`Setting screen to ${screenId}`);
-                this.currentScreen = this.screens[screenId];
-                this.currentScreen.load();
-            }
-        } else
-        {
-            console.error(`Screen whit ID ${screenId} not found.`);
-        }
+        //         console.log(`Setting screen to ${screenId}`);
+        //         this.currentScreen = this.screens[screenId];
+        //         this.currentScreen.load();
+        //     }
+        // } else
+        // {
+        //     console.error(`Screen whit ID ${screenId} not found.`);
+        // }
     }
 
     update(deltaTime)
     {
-        if (this.transitioning)
-        {
-            this.transitionProgress += deltaTime / this.transitionDuration;
-            if (this.transitionProgress >= 1)
-            {
-                this.transitionProgress = 1;
-                this.transitioning = false;
-                this.currentScreen.unload();
-                this.currentScreen = this.nextScreen;
-                this.nextScreen = null;
-                this.mode = 1;
-            }
-        }
-        if (this.mode == 2) 
-        {
-            this.transitionProgress -= deltaTime / this.transitionDuration;
-            if (this.transitionProgress <= 0)
-            {
-                this.mode = 0;
-                this.transitionProgress = 0;
-            }      
-        }
-        if (this.mode == 1)
-        {
-            this.transitionProgress -= deltaTime / this.transitionDuration;
-            if (this.transitionProgress <= 0)
-            {
-                this.mode = 0;
-                this.transitionProgress = 0;
-                this.transitioning = false;
-            }            
-        }
+        // if (this.transitioning)
+        // {
+        //     this.transitionProgress += deltaTime / this.transitionDuration;
+        //     if (this.transitionProgress >= 1)
+        //     {
+        //         this.transitionProgress = 1;
+        //         this.transitioning = false;
+        //         this.currentScreen.unload();
+        //         this.currentScreen = this.nextScreen;
+        //         this.nextScreen = null;
+        //         this.mode = 1;
+        //     }
+        // }
+        // if (this.mode == 2) 
+        // {
+        //     this.transitionProgress -= deltaTime / this.transitionDuration;
+        //     if (this.transitionProgress <= 0)
+        //     {
+        //         this.mode = 0;
+        //         this.transitionProgress = 0;
+        //     }      
+        // }
+        // if (this.mode == 1)
+        // {
+        //     this.transitionProgress -= deltaTime / this.transitionDuration;
+        //     if (this.transitionProgress <= 0)
+        //     {
+        //         this.mode = 0;
+        //         this.transitionProgress = 0;
+        //         this.transitioning = false;
+        //     }            
+        // }
         if (this.currentScreen)
         {
             this.currentScreen.OnUpdate(deltaTime);
+        }
+        if (this.nextScreen)
+        {
+            if (this.currentScreen!==null)
+                this.currentScreen.unload();
+            this.currentScreen = this.nextScreen;
+            this.currentScreen.load();
+            this.nextScreen = null;
         }
     }
 
     render()
     {
-             if (this.currentScreen)
+             if (this.currentScreen!==null)
             {
                  this.currentScreen.OnRender()
                  
@@ -592,41 +642,356 @@ class ScreenManager
 
 
 
-    render_gui()
-    {       
+    render_gui() {
 
-
-            if (this.currentScreen)
-            {
-                if (this.transitioning)
-                {
-                    this.currentScreen.OnRenderGui();
-                    canvas.set_alpha(this.transitionProgress);
-                    canvas.set_color(1.0, 1.0, 1.0);
-                    canvas.rect(0, 0, screenWidth, screenHeight, true)
-
-                } else
-                {
-                        this.currentScreen.OnRenderGui();
-                        if (this.mode == 1)
-                        {
-                            canvas.set_color(1.0, 1.0, 1.0);
-                            canvas.set_alpha(this.transitionProgress);
-                            canvas.rect(0, 0, screenWidth, screenHeight, true)
-                        }
-                        if (this.mode == 2)
-                        {
-                            canvas.set_color(0, 0, 0);
-                            canvas.set_alpha(this.transitionProgress);
-                            canvas.rect(0, 0, screenWidth, screenHeight, true)
-                        }
-                }
+        if (this.currentScreen!==null)
+        {
+           this.currentScreen.OnRenderGui();
         }
+
+
+        //     if (this.currentScreen)
+        //     {
+        //         if (this.transitioning)
+        //         {
+        //             this.currentScreen.OnRenderGui();
+        //             canvas.set_alpha(this.transitionProgress);
+        //             canvas.set_color(1.0, 1.0, 1.0);
+        //             canvas.rect(0, 0, screenWidth, screenHeight, true)
+
+        //         } else
+        //         {
+        //                 this.currentScreen.OnRenderGui();
+        //                 if (this.mode == 1)
+        //                 {
+        //                     canvas.set_color(1.0, 1.0, 1.0);
+        //                     canvas.set_alpha(this.transitionProgress);
+        //                     canvas.rect(0, 0, screenWidth, screenHeight, true)
+        //                }
+        //                 if (this.mode == 2)
+        //                 {
+        //                     canvas.set_color(0, 0, 0);
+        //                     canvas.set_alpha(this.transitionProgress);
+        //                     canvas.rect(0, 0, screenWidth, screenHeight, true)
+        //                 }
+        //         }
+        // }
         
       
     }
 
 
+}
+
+class NullColider
+{
+
+    constructor()
+    {
+        
+        this.type = "none"
+        this.x = 0
+        this.y = 0
+        this.z = 0
+        
+    }
+
+    render()
+    {
+    }
+
+    intersect(colider)
+    {
+        if (this.type === "sphere" && colider.type === "sphere")
+        {
+            return this.intersect_sphere_sphere(this, colider);
+        } else if (this.type === "box" && colider.type === "box")
+        {
+            return this.intersect_box_box(this, colider);
+        } else if (this.type === "sphere" && colider.type === "box")
+        {
+            return this.intersect_sphere_box(this, colider);
+        } else if (this.type === "box" && colider.type === "sphere")
+        {
+            return this.intersect_sphere_box(colider, this);
+        }
+        return false
+    }
+
+    intersect_sphere_sphere(s1, s2)
+    {
+       
+        var dx = s1.x - s2.x;
+        var dy = s1.y - s2.y;
+        var dz = s1.z - s2.z;
+        var d = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return d <= s1.radius + s2.radius;
+    }
+
+    intersect_box_box(b1, other)
+    {
+
+        return (
+            b1.x < other.x + other.width &&
+            b1.x + b1.width > other.x &&
+            b1.y < other.y + other.height &&
+            b1.y + b1.height > other.y &&
+            b1.z < other.z + other.depth &&
+            b1.z + b1.depth > other.z
+        );
+    }
+
+    intersect_sphere_box(s, b)
+    {
+       
+        var x = Math.max(b.x, Math.min(s.x, b.x + b.width));
+        var y = Math.max(b.y, Math.min(s.y, b.y + b.height));
+        var z = Math.max(b.z, Math.min(s.z, b.z + b.depth));
+        var dx = x - s.x;
+        var dy = y - s.y;
+        var dz = z - s.z;
+        var distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        return distance < s.radius;
+    }
+}
+
+class SphereColider extends NullColider
+{
+    constructor(x, y, z, radius)
+    {
+        super();
+        this.type = "sphere";
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.radius = radius;
+    }
+    render()
+    {
+        canvas.sphere(this.x, this.y, this.z, this.radius, 16,16, true);
+    }
+  
+
+  
+}
+
+class BoxColider extends NullColider
+{
+    constructor(x, y, z, width, height, depth)
+    {
+        super();
+        this.type = "box";
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.width = width;
+        this.height = height;
+        this.depth = depth;
+    }
+    render()
+    {
+       canvas.cube(this.x, this.y, this.z, this.width, this.height, this.depth, true);
+    }
+
+  
+}
+class Vec3
+{
+    constructor(x, y, z)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+    set(x, y, z)
+    {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+    }
+
+}
+
+
+
+class Entity 
+{
+
+    constructor()
+    {
+        this.isReady = false;
+        this.game = null;
+        this.node = -1;
+        this.name = "";
+        this.done = false;
+        this.visible = true;
+        this.scale = new Vec3(1, 1, 1);
+        this.rotation = new Vec3(0, 0, 0);
+        this.position = new Vec3(0, 0, 0);
+        this.collider = null;
+    }
+
+    kill()
+    {
+        this.done = true;
+        if (this.name === "player")
+            return;
+        if (this.node !=-1)
+        {
+            console.log("remove " + this.name+ " " + this.node);
+            scene.remove_node(this.node); 
+        }
+            
+      
+    }
+
+    load()
+    {
+    }
+    update(dt)
+    {
+    }
+
+    render()
+    {
+    }
+
+    unload()
+    {
+    }
+    collide(other)
+    {
+        
+    }
+}
+
+class Game 
+{
+    constructor()
+    {
+        this.entities = [];
+        this.ids = {};
+        this.OnCollide = (a,b) => {};
+    }
+
+    remove(obj)
+    {
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            if (this.entities[i] === obj)
+            {
+              //  console.log("remove " + this.entities[i].name+ " " + this.entities[i].node);
+                this.entities.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    update(dt)
+    {
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            if (this.entities[i].done) 
+            {
+                this.entities[i].unload();
+                this.entities.splice(i, 1);
+                i--;
+                continue;
+            }
+            this.entities[i].update(dt);
+        }
+        this.collisions();
+    }
+
+    render()
+    {
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            let entity = this.entities[i];
+            if (!entity.visible) continue;
+            if (entity.done) continue;
+            if (entity.isReady)
+                entity.render();
+           
+        }
+    }
+
+    unload()
+    {
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            this.entities[i].game = null;
+            this.entities[i].unload();
+        }
+    }
+    clear()
+    {
+
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            this.entities[i].kill();
+        }
+        this.entities = [];
+    }
+
+    addEntity(entity,toGet=false)
+    {
+        entity.game = this;
+        entity.load();
+        entity.update(0.1);
+        if (toGet===true)
+            this.ids[entity.name] = entity;
+        entity.isReady = true;
+        this.entities.push(entity);
+    }
+
+    GetById(id)
+    {
+        return this.ids[id];
+    }
+    collisions()
+    {
+        // for (var i = 0; i < this.entities.length; i++)
+        // {
+        //     for (var j = i + 1; j < this.entities.length; j++)
+        //     {
+        //         let entityA = this.entities[i];
+        //         let entityB = this.entities[j];
+
+        //         if (entityA.done || entityB.done) continue;
+
+
+            
+        //         if (entityA.colider && entityB.colider)
+        //         {
+        //             if (entityA.colider.intersect(entityB.colider))
+        //             {
+        //                 this.OnCollide(entityA, entityB);
+        //             }
+        //         }
+        //     }
+        // }
+    }
+    collide(main)
+    {
+        for (var i = 0; i < this.entities.length; i++)
+        {
+            let entity = this.entities[i];
+            if (entity===null) continue;
+            if (entity === main) continue;
+           if (entity.collider === null) continue;
+
+          //  console.log("collide " + main.name + " with " + entity.name);
+            if (main.collider.intersect(entity.collider))
+            {
+               // console.log("collide " + main.name + " with " + entity.name);
+                  main.collide(entity);
+                  entity.collide(main);
+                  this.OnCollide(main, entity);
+            }
+        
+        }
+    }
 }
 
 var screens = new ScreenManager();

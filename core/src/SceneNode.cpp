@@ -230,6 +230,32 @@ void Model::Transform(const Mat4 &transform)
     }
 }
 
+void Model::TransformTextureByLayer(int layer, const Mat4 &transform)
+{
+
+    DEBUG_BREAK_IF(layer >= (int)m_materials.size());
+    m_meshs[layer]->TransformTexture(transform);
+}
+
+void Model::TransformTexture(const Mat4 &transform)
+{
+
+    for (u32 i = 0; i < m_meshs.size(); i++)
+    {
+        m_meshs[i]->TransformTexture(transform);
+    }
+}
+
+void Model::CalculateBox()
+{
+
+    m_boundingBox.Clear();
+    for (u32 i = 0; i < m_meshs.size(); i++)
+    {
+        m_boundingBox.Merge(m_meshs[i]->GetBoundingBox());
+    }
+}
+
 //********************************************************************************************************************
 //STATICNODE
 //********************************************************************************************************************
@@ -241,7 +267,7 @@ StaticNode::StaticNode()
 
 StaticNode::~StaticNode()
 {
-
+   //LogInfo("delete StaticNode %s", name.c_str());
     Release();
 }
 

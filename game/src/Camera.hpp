@@ -122,6 +122,26 @@ class Camera
 
     }
 
+    void SetZoom(float zoom)
+    {
+        Zoom = zoom;
+    }
+
+    float getZoom() const
+    {
+        return Zoom;
+    }
+
+    void setNearClip(float near)
+    {
+        this->near = near;
+    }
+
+    void setFarClip(float far)
+    {
+        this->far = far;
+    }
+
     float getNearClip() const
     {
         return near;
@@ -294,6 +314,11 @@ public:
     Mat4 GetViewMatrix() const 
     {
          return  Mat4::LookAt(m_TargetPosition + m_CameraOffset, m_TargetPosition, Vec3(0.0f, 1.0f, 0.0f));
+    }
+
+    Vec3 GetCameraLocation() const 
+    {
+        return m_TargetPosition + m_CameraOffset;
     }
 
 private:

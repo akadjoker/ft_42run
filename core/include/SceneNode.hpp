@@ -45,6 +45,7 @@ class CORE_PUBLIC Node
     bool visible;
     bool active;
     bool done;
+    u64  id{0};
 
     std::string name;
     std::string parentName;
@@ -262,6 +263,10 @@ class CORE_PUBLIC Model
         std::string GetName() const { return m_fileName; }
 
         void Transform(const Mat4 &transform);
+        void TransformTexture(const Mat4 &transform);
+        void TransformTextureByLayer(int layer,const Mat4 &transform);
+
+        void CalculateBox();
 
         void Release();
 

@@ -123,6 +123,22 @@ void Mesh::Transform(const Mat4 &transform)
     isDirty = true;
 }
 
+void Mesh::TransformTexture(const Mat4 &transform)
+{
+
+    for (u32 i = 0; i < texCoords.size(); ++i) 
+    {
+        Vec3 tex;
+        tex.set(texCoords[i].x,texCoords[i].y,0.0f);
+
+        tex = Mat4::Transform(transform,tex);
+
+        texCoords[i].set(tex.x,tex.y);
+    }
+    flags |= VBO_TEXCOORD0;
+    isDirty = true;
+}
+
 void Mesh::Init()
 {
 

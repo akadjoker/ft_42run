@@ -11,9 +11,12 @@ canvas:
 
 
 
-    print       text,x,y 
-    set_font    index 
-    load_font   filename
+    print           text,x,y 
+    set_font         index 
+    load_font       filename
+    set_font_size   value
+    font_clip       bool
+    set_font_clip   x,y,width,height
 
     line        x1,y1,x2,y2
     circle      x, y, r [fill]
@@ -31,6 +34,7 @@ canvas:
 scene:
     enable_3d           bool 
     enable_2d           bool
+    set_clear_color     r,g,b
     load_entity         fileName,name,castShadow
     create_static_node   name,cast_Shadow
     load_model          fileName,name
@@ -39,23 +43,39 @@ scene:
     remove_entity       index
     remove_node         index 
 
-    create_cube         w,h,d
+    get_total_nodes     
+    get_total_models
+    get_total_entityes
+
+    get_model_id        name 
+    get_entity_id       name 
+    get_node_id         name 
+
+
+    create_cube          w,h,d
     create_plane          stacks,slices,tilesX,tilesY [uvTileX,uvTileY] 
     create_quad           x,y,width,height
 
-    node_add_model        nodeIndex, modelIndex  
-    entity_add_animation  entityIndex, filename
-    entity_play entityIndex, name, loop,blend
+    node_add_model           nodeIndex, modelIndex  
+    
+    entity_add_animation            entityIndex, filename
+    entity_play                     entityIndex, name, loop,blend
+    entity_stop                     entityIndex
+    entity_is_ended                 entityIndex
+    get_entity_frame                entityIndex
+    get_entity_animation_name       entityIndex
+
     set_entity_postion      nodeIndex, x, y, z
     set_entity_rotation     nodeIndex, x, y, z
     rotate_entity           nodeIndex, angle,x, y, z
     set_entity_scale        nodeIndex, x, y, z
-    set_entity_texture     modelIndex, materialIndex, textureIndex
+    set_entity_texture      modelIndex, materialIndex, textureIndex
 
 
     set_node_postion      nodeIndex, x, y, z
     set_node_rotation     nodeIndex, x, y, z
     set_node_scale        nodeIndex, x, y, z
+    set_node_visible      nodeIndex, visible
 
     set_model_texture     modelIndex, materialIndex, textureIndex
     set_model_name        modelIndex, name
@@ -63,12 +83,25 @@ scene:
     set_model_scale             modelIndex, x, y, z !on mesh 
     set_model_position          modelIndex, x, y, z !on mesh
     set_model_rotation          modelIndex, x, y, z !on mesh
+    get_model_size              modelIndex 
     model_update_normals        modelIndex,mesh
     model_update_smoth_normals modelIndex,mesh,angleWeighted
+    scale_model_texture_coords  modelIndex,layer, x,y
 
     set_light_color lightIndex, r, g, b
     set_light_position          lightIndex, x, y, z
     set_light_intensity         lightIndex, intensity
+
+camera:
+    set_follow_mode             mode 
+    set_follow_offset           x,y,z
+    set_follow_position         x,y,z
+    get_position                
+    set_position                x,y,z
+    set_yaw                         yaw
+    set_pitch                       pitch
+    rotate_by_mouse                 speed 
+    move                            mode,speed
 
 
 core:
@@ -82,3 +115,8 @@ mouse:
     up 
     x
     y
+
+keyboard:
+    down 
+    pressed
+    up 

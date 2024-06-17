@@ -182,6 +182,8 @@ class  CORE_PUBLIC  Mesh
     const std::string &GetName() const { return m_name; }
 
     void Transform(const Mat4 &transform);
+    void TransformTexture(const Mat4 &transform);
+
    
 
     void Init();

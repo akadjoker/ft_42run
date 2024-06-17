@@ -12,7 +12,7 @@
 #include "Buffer.hpp"
 #include <quickjs.h>
 #include "Camera.hpp"
-const int MAX_LIGHTS = 9;
+const int MAX_LIGHTS = 10;
 
 
 class   Scene
@@ -86,6 +86,9 @@ public:
 
     u32 GetFontsCount()  const { return (u32)m_fonts.size(); }
 
+    int GetNodeByName(const std::string &name);
+    int GetEntityByName(const std::string &name);
+    int GetModelByName(const std::string &name);
 
     void RemoveNodes();
     void RemoveEntities();
@@ -109,11 +112,13 @@ public:
     void SetCameraPosition(const Vec3 &p);
     void SetCameraYaw(float yaw) { m_camera.Yaw = yaw; }
     void SetCameraPitch(float pitch) { m_camera.Pitch = pitch; }
-    Vec3 GetCameraPosition() const { return cameraPosition; }
+    Vec3 GetCameraPosition() const { return m_camera.position; }
 
     void SetFollowCameraMode(bool mode) { m_followCameraMode = mode; }
     void SetFollowOffset(const Vec3 &offset);
     void SetFollowCameraPosition(const Vec3 &p);
+
+    void SetClearColor(u8 r, u8 g, u8 b) {m_clearColor.Set(r,g,b,255);}
 
     Scene();
     ~Scene();
@@ -155,13 +160,15 @@ private:
 
     Mat4 viewMatrix;
     Mat4 projectionMatrix;
-    Vec3 cameraPosition;
+
     Vec3 lightPos;
     bool do3D{true};
     bool do2D{true};
     FixCamera m_followCamera;
     Camera m_camera;
     bool m_followCameraMode{false};
+    Vec3 m_cameraPosition;
+    Color m_clearColor;
 
     std::unordered_map<std::string, JSValue> js_functions;
     std::unordered_map<std::string, bool>    js_in_functions;

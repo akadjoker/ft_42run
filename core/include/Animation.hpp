@@ -97,12 +97,13 @@ struct KeyFrame
 
     int GetPositionIndex(float animationTime)
     {
+         // SDL_Log("KeyFrame time %f  %ld",animationTime,positionKeyFrames.size());
         for (u32 index = 0; index < positionKeyFrames.size() - 1; ++index)
         {
             if (animationTime < positionKeyFrames[index + 1].frame)
                 return index;
         }
-      //  SDL_Log("KeyFrame time %f  %ld",animationTime,positionKeyFrames.size());
+      
         DEBUG_BREAK_IF(true);
         return 0;
     }
@@ -402,13 +403,16 @@ class CORE_PUBLIC Animator
 
     bool Play(const std::string &name, int mode=Animation::LOOP,  float blendTime = 0.25f);
 
+    void Stop();
+    bool IsEnded() ;
+    bool IsPlaying();
 
-
-  std::string GetCurrentAnimationName() 
-  { 
-     std::string s("");
-     if (!currentAnimation) return s;
-     return currentAnimation->name; 
+    std::string GetCurrentAnimationName()
+    {
+        std::string s("");
+        if (!currentAnimation)
+            return s;
+        return currentAnimation->name; 
   }
 
   float GetCurrentFrame()

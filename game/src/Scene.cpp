@@ -2,14 +2,11 @@
 #include "pch.h"
 #include "Scene.hpp"
 
-
-const float NEAR_PLANE = 0.1f;
-const float FAR_PLANE = 2000.0f;
 // float lightLinear = 0.09f;
 // float lightQuadratic = 0.032f;
 // float lightIntensity =0.5f;
 
-
+static u64 lastID = 0;
 
 static VertexFormat::Element VertexElements[] =
     {
@@ -42,13 +39,11 @@ TextureBuffer renderTexture;
 
 
 
-void updateCascades(const Mat4 & view, const Mat4 & proj,const Vec3 & lightPos)
+void updateCascades(float nearClip, float farClip, const Mat4 & view, const Mat4 & proj,const Vec3 & lightPos)
 	{
 		float cascadeSplits[SHADOW_MAP_CASCADE_COUNT];
      	float cascadeSplitLambda = 0.95f;
 
-        float nearClip = NEAR_PLANE;
-		float farClip = FAR_PLANE;
 		float clipRange = farClip - nearClip;
 
 		float minZ = nearClip;
@@ -127,7 +122,7 @@ void updateCascades(const Mat4 & view, const Mat4 & proj,const Vec3 & lightPos)
       
 
 			// Store split distance and matrix in cascade
-			cascades[i].splitDepth = (NEAR_PLANE + splitDist * clipRange) * -1.0f;
+			cascades[i].splitDepth = (nearClip + splitDist * clipRange) * -1.0f;
 			cascades[i].viewProjMatrix = lightOrthoMatrix * lightViewMatrix;
 
 			lastSplitDist = cascadeSplits[i];
@@ -167,10 +162,11 @@ u32 Scene::AddEntity(const std::string &fileName, const std::string &name, bool 
     Entity *e = new Entity();
     if (e->Load(fileName))
     {
+        e->id = lastID++;
         e->SetName(name);
         m_entities.push_back(e);
         e->shadow = castShadow;
-        return m_entities.size() -1;
+        return e->id;
     }
     delete e;
     return -1;
@@ -180,8 +176,9 @@ u32 Scene::AddEntity(const std::string &fileName, const std::string &name, bool 
 u32 Scene::AddModel(const std::string &fileName, const std::string &name)
 {
     Model *m = new Model();
-    if (m->Load(name,VertexFormat(VertexElements, VertexElemntsCount)))
+    if (m->Load(fileName,VertexFormat(VertexElements, VertexElemntsCount)))
     {
+        m->SetName(name);
         m_models.push_back(m);
         return m_models.size() - 1;
     }
@@ -195,26 +192,35 @@ u32 Scene::AddModel(const std::string &fileName, const std::string &name)
 u32 Scene::AddStaticNode(const std::string &name,bool castShadow)
 {
     StaticNode *node = new StaticNode();
+    node->id = lastID++;
     node->SetName(name);
     node->shadow = castShadow;
     m_nodes.push_back(node);
-    return m_nodes.size() - 1;
+    return node->id;
 }
 
 bool Scene::NodeAddChild(u32 parent, u32 child)
 {
-
-    if (parent < (u32)m_nodes.size() && child < (u32)m_models.size())
+    StaticNode *p = GetNode(parent);
+    if (p!=nullptr)
     {
-        StaticNode *p = m_nodes[parent];
-        if (p!=nullptr)
-        {
-            Model *m = m_models[child];
-            if (m == nullptr) return false;
-            p->AddModel(m);
-            return true;
-        }
+        Model *m = m_models[child];
+        if (m == nullptr) return false;
+        p->AddModel(m);
+        return true;
     }
+
+    // if (parent < (u32)m_nodes.size() && child < (u32)m_models.size())
+    // {
+    //     StaticNode *p = m_nodes[parent];
+    //     if (p!=nullptr)
+    //     {
+    //         Model *m = m_models[child];
+    //         if (m == nullptr) return false;
+    //         p->AddModel(m);
+    //         return true;
+    //     }
+    // }
     return false;
     
 }
@@ -475,6 +481,7 @@ void Scene::Init()
 
     int width = Device::Instance().GetWidth();
     int height = Device::Instance().GetHeight();
+    m_clearColor.Set(108,108,108,0);
     for (int i = 0; i < MAX_LIGHTS; i++)
     {
         m_lights.push_back(Light());
@@ -499,6 +506,8 @@ void Scene::Init()
     renderTexture.Init(width, height);
 
     m_camera.Init(Vec3(0.0f, 0.5f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
+    m_camera.setNearClip(0.01f);
+    m_camera.setFarClip(1000.0f);
     m_followCamera.Init(Vec3(0.0f, 1.0f, -5.0f));
 
 
@@ -627,9 +636,12 @@ Model *Scene::GetModel(int index)
 
 Entity *Scene::GetEntity(int index)
 {
-    if (index >= 0 && index < m_entities.size())
+   for (u32 i = 0; i < m_entities.size(); i++)
     {
-        return m_entities[index];
+        if (m_entities[i]->id == index)
+        {
+            return m_entities[i];
+        }
     }
     return nullptr;
 }
@@ -637,15 +649,61 @@ Entity *Scene::GetEntity(int index)
 
 StaticNode *Scene::GetNode(int index)
 {
-    if (index >= 0 && index < m_nodes.size())
+    for (u32 i = 0; i < m_nodes.size(); i++)
     {
-        return m_nodes[index];
+        if (m_nodes[i]->id == index)
+        {
+            return m_nodes[i];
+        }
     }
     return nullptr;
 }
 
+int Scene::GetEntityByName(const std::string &name)
+{
+
+    for (u32 i = 0; i < m_entities.size(); i++)
+    {
+      //  LogInfo("[%d] %s - %s",i,m_entities[i]->name.c_str(),name.c_str());
+        if (m_entities[i]->name == name)
+        {
+          //  LogInfo("FOUND [%d] %s",i,m_entities[i]->name.c_str());
+            return i;
+        }
+    }
+    return -1; 
+    
+}
+int Scene::GetModelByName(const std::string &name)
+{
+
+    for (u32 i = 0; i < m_models.size(); i++)
+    {
+        if (m_models[i]->GetName() == name)
+        {
+            return i;
+        }
+    }
+    return -1;
+
+}
+
+int Scene::GetNodeByName(const std::string &name)
+{
+
+    for (u32 i = 0; i < m_nodes.size(); i++)
+    {
+        if (m_nodes[i]->name == name)
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
 bool Scene::RemoveModel(int index)
 {
+  
 
     if (index >= 0 && index < m_models.size())
     {
@@ -657,24 +715,42 @@ bool Scene::RemoveModel(int index)
 }
 bool Scene::RemoveEntity(int index)
 {
-
-    if (index >= 0 && index < m_entities.size())
+    for (u32 i = 0; i < m_entities.size(); i++)
     {
-        m_nodesToDelete.push_back(m_entities[index]);
-        m_entities.erase(m_entities.begin() + index);
-        return true;
+        if (m_entities[i]->id == index)
+        {
+            delete m_entities[i];
+            m_entities.erase(m_entities.begin() + i);
+            return true;
+        }
     }
+
+    // if (index >= 0 && index < m_entities.size())
+    // {
+    //     m_nodesToDelete.push_back(m_entities[index]);
+    //     m_entities.erase(m_entities.begin() + index);
+    //     return true;
+    // }
     return false;
 }
 bool Scene::RemoveNode(int index)
 {
-
-    if (index >= 0 && index < m_nodes.size())
+    for (u32 i = 0; i < m_nodes.size(); i++)
     {
-        m_nodesToDelete.push_back(m_nodes[index]);
-        m_nodes.erase(m_nodes.begin() + index);
-        return true;
+        if (m_nodes[i]->id == index)
+        {
+            delete m_nodes[i];
+            m_nodes.erase(m_nodes.begin() + i);
+            return true;
+        }
     }
+
+    // if (index >= 0 && index < m_nodes.size())
+    // {
+    //     m_nodesToDelete.push_back(m_nodes[index]);
+    //     m_nodes.erase(m_nodes.begin() + index);
+    //     return true;
+    // }
     return false;
 }
 
@@ -968,18 +1044,18 @@ void Scene::Render()
 
     
 
-//************
-
-        int width = Device::Instance().GetWidth();
+         int width = Device::Instance().GetWidth();
         int height = Device::Instance().GetHeight();
 
-        
+        projectionMatrix = m_camera.GetProjectionMatrix((float)width / (float)height) ;
+        viewMatrix=m_camera.GetViewMatrix();
+       
 
 
     if (do3D)
     {
     
-       updateCascades(viewMatrix, projectionMatrix, lightPosition);
+       updateCascades(m_camera.getNearClip(), m_camera.getFarClip(),viewMatrix, projectionMatrix, lightPosition);
 
 
 
@@ -1038,29 +1114,35 @@ void Scene::Render()
         
         
         Driver::Instance().SetViewport(0, 0, width, height);
+
+        float r = m_clearColor.r / 255.0f;
+        float g = m_clearColor.g / 255.0f;
+        float b = m_clearColor.b / 255.0f;
         
-        Driver::Instance().SetClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        
+        Driver::Instance().SetClearColor(r,g,b, 1.0f);
         Driver::Instance().Clear();
     
 
    // cameraPosition.set(-0.5f,0.5f,0.9f);
-   cameraPosition.set(10000,1000,10000);
+        Vec3 cameraPosition = m_camera.position;
 
-    //lightDir = glm::normalize(glm::vec3(20.0f, 50, 20.0f));
-    Vec3 lightDir = Vec3::Normalize(Vec3(-20.0f, 50, 20.0f));
+        // lightDir = glm::normalize(glm::vec3(20.0f, 50, 20.0f));
+        Vec3 lightDir = Vec3::Normalize(Vec3(-20.0f, 50, 20.0f));
+       // Vec3 lightUp = Vec3(0.0f, 0.0f, 0.0f);
 
-    m_modelShader.Use();
-    m_modelShader.SetMatrix4("view", viewMatrix.x);
-    m_modelShader.SetMatrix4("projection", projectionMatrix.x);
-    m_modelShader.SetFloat("viewPos", cameraPosition.x, cameraPosition.y, cameraPosition.z);
-    m_modelShader.SetFloat("lightDir",lightDir.x, lightDir.y, lightDir.z);
-    m_modelShader.SetFloat("farPlane", FAR_PLANE);
+        m_modelShader.Use();
+        m_modelShader.SetMatrix4("view", viewMatrix.x);
+        m_modelShader.SetMatrix4("projection", projectionMatrix.x);
+        m_modelShader.SetFloat("viewPos", cameraPosition.x, cameraPosition.y, cameraPosition.z);
+        m_modelShader.SetFloat("lightDir", lightDir.x, lightDir.y, lightDir.z);
+        m_modelShader.SetFloat("farPlane", m_camera.getFarClip());
 
-    for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++)
-    {
-        m_modelShader.SetMatrix4("cascadeshadows["+std::to_string(i)+"].projViewMatrix", &cascades[i].viewProjMatrix.c[0][0]);
-        m_modelShader.SetFloat("cascadeshadows["+std::to_string(i)+"].splitDistance", cascades[i].splitDepth);
-        m_modelShader.SetInt("shadowMap["+std::to_string(i)+"]", i + 1);
+        for (u32 i = 0; i < SHADOW_MAP_CASCADE_COUNT; i++)
+        {
+            m_modelShader.SetMatrix4("cascadeshadows[" + std::to_string(i) + "].projViewMatrix", &cascades[i].viewProjMatrix.c[0][0]);
+            m_modelShader.SetFloat("cascadeshadows[" + std::to_string(i) + "].splitDistance", cascades[i].splitDepth);
+            m_modelShader.SetInt("shadowMap[" + std::to_string(i) + "]", i + 1);
             
     }
      
@@ -1155,7 +1237,13 @@ void Scene::Render()
 
         Driver::Instance().SetBlendMode(BlendMode::BLEND);
         Driver::Instance().SetViewport(0, 0, width, height);
-        Driver::Instance().SetClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+        
+        float r = m_clearColor.r / 255.0f;
+        float g = m_clearColor.g / 255.0f;
+        float b = m_clearColor.b / 255.0f;
+        
+        
+        Driver::Instance().SetClearColor(r,g,b, 1.0f);
         Driver::Instance().Clear();
 }
 
@@ -1210,17 +1298,19 @@ void Scene::Update(float elapsed)
              viewMatrix = m_followCamera.GetViewMatrix();
            //  camera.position = playerActor->getWorldPosition()+ Vec3(0.0f, 5.0f, 0.0f);
              m_camera.Yaw = 0.0f;
+             m_cameraPosition = m_followCamera.GetCameraLocation();
 
 
         } else 
         {
             viewMatrix = m_camera.GetViewMatrix();
+            m_cameraPosition = m_camera.position;
         }   
 
      //   Mat4 view = followCamera.GetViewMatrix();
       
 
-        cameraPosition = m_camera.position;
+        
    
 
 
@@ -1349,211 +1439,187 @@ bool Scene::LoadModelShader()
         }
     );
 
-    const char *fShader = GLSL(
+     const char *fShader = GLSL(
 
+         const int NUM_CASCADES = 4;
+         const int NR_LIGHTS = 10;
 
-      
-        const int NUM_CASCADES = 4;
-        const int NR_LIGHTS = 9;
+         out vec4 FragColor;
 
-     
+         in vec3 FragPos;
+         in vec2 TexCoords;
+         in vec3 Normal;
 
+         in vec3 outViewPosition;
+         in vec4 outWorldPosition;
 
-        out vec4 FragColor;
+         struct CascadeShadow {
+             mat4 projViewMatrix;
+             float splitDistance;
+         };
 
-     
+         struct Light {
+             vec3 Position;
+             vec3 Color;
+             float Intensity;
+             float Linear;
+             float Quadratic;
+         };
 
-        in  vec3 FragPos;
-        in  vec2 TexCoords;
-        in  vec3 Normal; 
+         uniform Light lights[NR_LIGHTS];
 
-        in vec3 outViewPosition;
-        in vec4 outWorldPosition;
+         uniform sampler2D diffuseTexture;
+         uniform CascadeShadow cascadeshadows[NUM_CASCADES];
+         uniform sampler2D shadowMap[NUM_CASCADES];
 
-        struct CascadeShadow 
-        {
-            mat4 projViewMatrix;
-            float splitDistance;
-        };
+         uniform vec3 lightDir;
+         uniform float farPlane;
+         uniform vec3 viewPos;
 
-        struct Light 
-        {
-            vec3 Position;
-            vec3 Color;
-            float Intensity;
-            float Linear ;
-            float Quadratic;
-        };
-        
-        uniform Light lights[NR_LIGHTS];
+         const float constant = 1.0;
+         const float linear = 0.09;
+         const float quadratic = 0.032;
+         const float shininess = 32.0;
+         const float E = 2.71828;
 
+         float CalculateShadow(vec4 worldPosition, int idx) {
+             vec2 texelSize = 1.0 / textureSize(shadowMap[idx], 0);
+             vec4 shadowMapPosition = cascadeshadows[idx].projViewMatrix * worldPosition;
+             vec4 projCoords = (shadowMapPosition / shadowMapPosition.w) * 0.5 + 0.5;
 
+             float currentDepth = projCoords.z;
 
-        uniform sampler2D diffuseTexture;
-        uniform CascadeShadow cascadeshadows[NUM_CASCADES];
-        uniform sampler2D shadowMap[NUM_CASCADES];
+             // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
+             if (currentDepth > 1.0)
+             {
+                 return 0.0;
+             }
 
-      
+             vec3 normal = normalize(Normal);
+             float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+             const float biasModifier = 0.5f;
 
-  
+             if (idx == NUM_CASCADES)
+             {
+                 bias *= 1 / (farPlane * biasModifier);
+             }
+             else
+             {
+                 bias *= 1 / (cascadeshadows[idx].splitDistance * biasModifier);
+             }
 
-        uniform vec3  lightDir;
-        uniform float farPlane;
-        uniform vec3  viewPos;
-     
-
-        const float constant = 1.0;
-        const float linear = 0.09;
-        const float quadratic = 0.032;
-        const float shininess = 32.0;
-
-
-
-            float CalculateShadow(vec4 worldPosition, int idx) 
-            {
-                vec2 texelSize  = 1.0 / textureSize(shadowMap[idx], 0);
-                vec4 shadowMapPosition = cascadeshadows[idx].projViewMatrix * worldPosition;
-                vec4 projCoords = (shadowMapPosition / shadowMapPosition.w) * 0.5 + 0.5;
-
-                float currentDepth = projCoords.z;
-
-                // keep the shadow at 0.0 when outside the far_plane region of the light's frustum.
-                if (currentDepth > 1.0)
-                {
-                    return 0.0;
-                }
-
-                vec3 normal = normalize(Normal);
-                float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-                const float biasModifier = 0.5f;
-
-                if (idx == NUM_CASCADES)
-                {
-                    bias *= 1 / (farPlane * biasModifier);
-                }
-                else
-                {
-                    bias *= 1 / (cascadeshadows[idx].splitDistance * biasModifier);
-                }
-
-                float shadow = 0.0;
-                for(int x = -1; x <= 1; ++x)
-                {
-                    for(int y = -1; y <= 1; ++y)
-                    {
-                        vec2 texel = projCoords.xy + vec2(x, y) * texelSize;
-                        float pcfDepth = texture(shadowMap[idx], texel).r;
-                        shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;        
-                    }    
-                }
-                shadow /= 9.0;
-
-                return shadow;
-            }
-
-
-
-      
-
-
-        void main()
-        {           
-            vec3 color = texture(diffuseTexture, TexCoords).rgb;
-            vec3 viewDir = normalize(viewPos - FragPos);
-            
-            
-            int cascadeIndex = 0;
-            for (int i=0; i<NUM_CASCADES - 1; i++) 
-            {
-                if (outViewPosition.z < cascadeshadows[i].splitDistance) 
-                {
-                    cascadeIndex = i + 1;
+             float shadow = 0.0;
+             for (int x = -1; x <= 1; ++x)
+             {
+                 for (int y = -1; y <= 1; ++y)
+                 {
+                     vec2 texel = projCoords.xy + vec2(x, y) * texelSize;
+                     float pcfDepth = texture(shadowMap[idx], texel).r;
+                     shadow += (currentDepth - bias) > pcfDepth ? 1.0 : 0.0;
                  }
-            }
+             }
+             shadow /= 10.0;
+
+             return shadow;
+         }
+
+         void main() {
+             vec3 color = texture(diffuseTexture, TexCoords).rgb;
+             vec3 viewDir = normalize(viewPos - FragPos);
+
+             int cascadeIndex = 0;
+             for (int i = 0; i < NUM_CASCADES - 1; i++)
+             {
+                 if (outViewPosition.z < cascadeshadows[i].splitDistance)
+                 {
+                     cascadeIndex = i + 1;
+                 }
+             }
 
 
              //vec3 totalDiffuse = vec3(0.0);
-        //    vec3 totalSpecular= vec3(0.0);
+             //    vec3 totalSpecular= vec3(0.0);
 
+             // luz para shadow "sol"
+             vec3 normal = normalize(Normal);
+             vec3 lightColor = vec3(0.4);
+             vec3 ambient = 0.2 * color;
+             float diff = max(dot(lightDir, normal), 0.0);
+             vec3 diffuse = diff * lightColor;
+
+             vec3 reflectDir = reflect(-lightDir, normal);
+             float spec = 0.0;
+             vec3 halfwayDir = normalize(lightDir + viewDir);
+             spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
+             vec3 specular = spec * lightColor;
+
+             float shadow = CalculateShadow(outWorldPosition, cascadeIndex);
+
+             vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;
+             // vec3 lighting = vec3(0.0);
+
+             //    vec3 totalDiffuse = vec3(0.0);
+             //    vec3 totalSpecular= vec3(0.0);
+
+             vec3 Colors = vec3(0.0);
+
+             for (int i = 0; i < NR_LIGHTS; ++i)
+             {
+                 // diffuse
+                 vec3 lightDir = normalize(lights[i].Position - FragPos);
+                 float diff = max(dot(Normal, lightDir), 0.0);
+
+                 // vec3 diffuse = lights[i].Color * diff * color.rgb * lights[i].Intensity;
+
+                 vec3 diffuse = color.rgb * diff * lights[i].Color * lights[i].Intensity;
+
+                 // // specular
+                 //  vec3 halfwayDir = normalize(lightDir + viewDir);
+                 //  float spec = pow(max(dot(Normal, halfwayDir), 0.0), 8.0);
+                 //  vec3 specular =color.rgb  * spec *  lights[i].Color ;
+
+                 // specular
+                 float specularStrength = lights[i].Intensity;
+                 vec3 viewDir = normalize(viewPos - FragPos);
+                 vec3 reflectDir = reflect(-lightDir, Normal);
+                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1.0);
+                 vec3 specular = specularStrength * spec * color.rgb;
+
+                 // attenuation
+                 float distance = length(lights[i].Position - FragPos);
+
+                 // if (distance > farPlane/2.0f) continue;
+                 float attenuation = 1.0 / (constant + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
+                 diffuse *= attenuation;
+                 specular *= attenuation;
+
+                 Colors += diffuse + specular;
+             }
+
+             vec3 finalColor = lighting + Colors;
+
+             float fogDistance = length(viewPos - FragPos);
+             //float fogDistance = gl_FragCoord.z / gl_FragCoord.w;
             
+             vec3 fogColor = vec3(0.5, 0.5, 0.5);
+             float fogDensity = 0.008;
+             float fogFactor = 1.0 / pow(E, fogDistance * fogDensity);
             
-
-            //luz para shadow "sol"
-            vec3 normal = normalize(Normal);
-            vec3 lightColor = vec3(0.6);
-            vec3 ambient = 0.6 * color;
-            float diff = max(dot(lightDir, normal), 0.0);
-            vec3 diffuse = diff * lightColor;
-      
-            vec3 reflectDir = reflect(-lightDir, normal);
-            float spec = 0.0;
-            vec3 halfwayDir = normalize(lightDir + viewDir);  
-            spec = pow(max(dot(normal, halfwayDir), 0.0), shininess);
-            vec3 specular = spec * lightColor;    
-
-            float shadow = CalculateShadow(outWorldPosition, cascadeIndex);                      
-            
-
-
+             fogFactor = clamp(fogFactor, 0.0, 1.0);
 
              
-            vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
-           // vec3 lighting = vec3(0.0);
 
-        //    vec3 totalDiffuse = vec3(0.0);
-        //    vec3 totalSpecular= vec3(0.0);
+            vec3 fogColorFinal = fogFactor *  finalColor + (1.0 - fogFactor) * fogColor;
 
-            vec3 Colors=vec3(0.0);
+             FragColor = vec4(fogColorFinal, 1.0);
 
-            for(int i = 0; i < NR_LIGHTS; ++i)
-            {
-                // diffuse
-                vec3 lightDir = normalize(lights[i].Position - FragPos);
-                float diff = max(dot(Normal, lightDir), 0.0);
-                
-                //vec3 diffuse = lights[i].Color * diff * color.rgb * lights[i].Intensity;
+             // FragColor = vec4(lighting + Colors, 1.0);
+         }
 
-                vec3 diffuse =  color.rgb  * diff *  lights[i].Color * lights[i].Intensity;
-                
-                // // specular
-               //  vec3 halfwayDir = normalize(lightDir + viewDir);  
-               //  float spec = pow(max(dot(Normal, halfwayDir), 0.0), 8.0);
-               //  vec3 specular =color.rgb  * spec *  lights[i].Color ;
-
-                // specular
-                float specularStrength =  lights[i].Intensity;
-                vec3 viewDir = normalize(viewPos - FragPos);
-                vec3 reflectDir = reflect(-lightDir, Normal);  
-                float spec = pow(max(dot(viewDir, reflectDir), 0.0), 1.0);
-                vec3 specular = specularStrength * spec * color.rgb;  
-                
-                // attenuation
-                float distance = length(lights[i].Position - FragPos);
-                
-               //if (distance > farPlane/2.0f) continue;
-                float attenuation = 1.0 / (constant + lights[i].Linear * distance + lights[i].Quadratic * distance * distance);
-                diffuse  *= attenuation;
-                specular *= attenuation;
-
-         
-
-               
-
-                Colors += diffuse + specular ;        
-            }
-
-            
-         
-        
-         
-          FragColor = vec4(lighting + Colors, 1.0);
-        }
-
-        
-    );
-   if (! m_modelShader.Create(vShader, fShader))
-   {
-    DEBUG_BREAK_IF(true);
+     );
+     if (!m_modelShader.Create(vShader, fShader))
+     {
+         DEBUG_BREAK_IF(true);
    }
     m_modelShader.LoadDefaults();
     m_modelShader.SetInt("diffuseTexture", 0);
@@ -1883,8 +1949,8 @@ static JSValue js_scene_load_entity(JSContext *ctx, JSValueConst , int argc, JSV
     }
 
     const char* fileName = JS_ToCString(ctx, argv[0]);
-    bool castShadow = JS_ToBool(ctx, argv[1]);
-    const char* name = JS_ToCString(ctx, argv[2]);
+    const char* name = JS_ToCString(ctx, argv[1]);
+    bool castShadow = JS_ToBool(ctx, argv[2]);
 
     u32 result =  Scene::Instance().AddEntity(fileName,name,castShadow);
 
@@ -1895,6 +1961,66 @@ static JSValue js_scene_load_entity(JSContext *ctx, JSValueConst , int argc, JSV
     JS_FreeCString(ctx, name);
     JS_FreeCString(ctx, fileName);
     
+    return  JS_NewInt32(ctx, result);
+}
+
+static JSValue js_scene_get_entity_id(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_entity_id: Wrong number of arguments(name)");
+    }
+
+    const char* name = JS_ToCString(ctx, argv[0]);
+
+    int result =  Scene::Instance().GetEntityByName(name);
+
+    if (result == -1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_entity_id: Entity not found");
+    }
+    JS_FreeCString(ctx, name);
+
+    return  JS_NewInt32(ctx, result);
+}
+
+static JSValue js_scene_get_node_id(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_id: Wrong number of arguments(name)");
+    }
+
+    const char* name = JS_ToCString(ctx, argv[0]);
+
+    int result =  Scene::Instance().GetNodeByName(name);
+
+    if (result == -1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_id: Node %s not found", name);
+    }
+    JS_FreeCString(ctx, name);
+
+    return  JS_NewInt32(ctx, result);
+}
+
+static JSValue js_scene_get_model_id(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv) 
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_model_id: Wrong number of arguments(name)");
+    }
+
+    const char* name = JS_ToCString(ctx, argv[0]);
+
+    int result =  Scene::Instance().GetModelByName(name);
+
+    if (result == -1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_model_id: Model[%s] not found", name);
+    }
+    JS_FreeCString(ctx, name);
+
     return  JS_NewInt32(ctx, result);
 }
 
@@ -1914,6 +2040,7 @@ static JSValue js_scene_load_model(JSContext *ctx, JSValueConst , int argc, JSVa
     
     return  JS_NewInt32(ctx, result);
 }
+
 
 static JSValue js_scene_load_static_node(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
@@ -1967,6 +2094,10 @@ static JSValue js_scene_remove_node(JSContext *ctx, JSValueConst , int argc, JSV
     int index;
     JS_ToInt32(ctx, &index,argv[0]);
     bool result = Scene::Instance().RemoveNode(index);
+    if (result == false)
+    {
+        return JS_ThrowReferenceError(ctx, "remove_node: Node [%d] not found", index);
+    }
     return  JS_NewBool(ctx, result);
 }
 
@@ -2041,6 +2172,8 @@ static JSValue js_scene_create_quad(JSContext *ctx, JSValueConst , int argc, JSV
 }
 
 
+
+
 static JSValue js_node_add_model(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     
@@ -2097,8 +2230,11 @@ static JSValue js_entity_play_animation(JSContext *ctx, JSValueConst , int argc,
     }
     int entityIndex,mode;
     JS_ToInt32(ctx, &entityIndex,argv[0]);
+
     const char* name = JS_ToCString(ctx, argv[1]);
+
     JS_ToInt32(ctx, &mode,argv[2]);
+    
     double blend = 0.25;
     JS_ToFloat64(ctx, &blend,argv[3]);
     
@@ -2111,6 +2247,104 @@ static JSValue js_entity_play_animation(JSContext *ctx, JSValueConst , int argc,
          JS_ThrowReferenceError(ctx, "entity_play_animation: entity[%d] not found",entityIndex);
     }
     JS_FreeCString(ctx, name);
+    return JS_NULL;
+}
+
+
+static JSValue js_entity_frame(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_entity_frame: Wrong number of arguments(entityIndex)");
+    }
+    int entityIndex;
+    double frame;
+    JS_ToInt32(ctx, &entityIndex,argv[0]);
+
+    
+    
+    Entity *entity = Scene::Instance().GetEntity(entityIndex);
+    if (entity)
+    {
+        frame = entity->animator->GetCurrentFrame() ;
+        return JS_NewFloat64(ctx,frame);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "get_entity_frame: entity[%d] not found",entityIndex);
+    }
+    
+    return JS_NULL;
+}   
+
+static JSValue js_entity_stop(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "entity_stop: Wrong number of arguments(entityIndex)");
+    }
+    int entityIndex;
+    
+    JS_ToInt32(ctx, &entityIndex,argv[0]);
+
+    
+    
+    Entity *entity = Scene::Instance().GetEntity(entityIndex);
+    if (entity)
+    {
+        entity->animator->Stop();
+        } else 
+    {
+         JS_ThrowReferenceError(ctx, "get_entity_frame: entity[%d] not found",entityIndex);
+    }
+    
+    return JS_NULL;
+}  
+static JSValue js_entity_is_ended(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "entity_is_ended: Wrong number of arguments(entityIndex)");
+    }
+    int entityIndex;
+    
+    JS_ToInt32(ctx, &entityIndex,argv[0]);
+
+    bool result;
+
+        Entity *entity = Scene::Instance().GetEntity(entityIndex);
+    if (entity)
+    {
+       result = entity->animator->IsEnded();
+        return JS_NewBool(ctx,result);
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "get_entity_frame: entity[%d] not found",entityIndex);
+    }
+    
+    return JS_NULL;
+}  
+static JSValue js_entity_animation_name(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_entity_animation_name: Wrong number of arguments(entityIndex)");
+    }
+
+    int entityIndex;
+    JS_ToInt32(ctx, &entityIndex,argv[0]);
+
+    
+    
+    Entity *entity = Scene::Instance().GetEntity(entityIndex);
+    if (entity)
+    {
+        std::string name =entity->animator->GetCurrentAnimationName();
+        return JS_NewString(ctx, name.c_str());
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "get_entity_animation_name: entity[%d] not found",entityIndex);
+    }
+    
     return JS_NULL;
 }
 
@@ -2260,7 +2494,38 @@ static JSValue js_set_entity_texture (JSContext *ctx, JSValueConst , int argc, J
 //*************************************************************************************************
 //          NODE
 //*************************************************************************************************
+static JSValue js_scene_get_model_size(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "scene_get_model_size: Wrong number of arguments(modelIndex)");
+    }
+    int modelIndex;
+    JS_ToInt32(ctx, &modelIndex,argv[0]);
+    Model *model = Scene::Instance().GetModel(modelIndex);
+    if (model)
+    {
+        model->CalculateBox();
+        BoundingBox box =  model->GetBoundingBox();
 
+        JSValue obj = JS_NewObject(ctx);
+
+        double w= box.max.x - box.min.x;
+        double h= box.max.y - box.min.y;
+        double d= box.max.z - box.min.z;
+
+
+        JS_SetPropertyStr(ctx, obj, "width", JS_NewFloat64(ctx, w));
+        JS_SetPropertyStr(ctx, obj, "height", JS_NewFloat64(ctx, h));
+        JS_SetPropertyStr(ctx, obj, "depth", JS_NewFloat64(ctx, d));
+        return obj;
+
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "get_model_size: model [%d] not found",modelIndex);
+    }
+    return JS_NULL;
+}
 static JSValue js_set_node_postion (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 4)
@@ -2339,6 +2604,29 @@ static JSValue js_set_node_scale (JSContext *ctx, JSValueConst , int argc, JSVal
     return JS_NULL;
 }
 
+static JSValue js_set_node_visible (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 2)
+    {
+        return JS_ThrowReferenceError(ctx, "set_node_visible: Wrong number of arguments(node, visible)");
+    }
+    int modelIndex;
+    bool visible;
+    JS_ToInt32(ctx, &modelIndex,argv[0]);
+    visible = JS_ToBool(ctx, argv[1]);
+    Node *model = Scene::Instance().GetNode(modelIndex);
+    if (model)
+    {
+        model->visible= visible;
+        
+    } else 
+    {
+         JS_ThrowReferenceError(ctx, "set_node_visible: model[%d] not found",modelIndex);
+    }
+    
+    return JS_NULL;
+
+}
 //*************************************************************************************************
 //          MODEL
 //*************************************************************************************************
@@ -2373,6 +2661,35 @@ static JSValue js_set_model_texture (JSContext *ctx, JSValueConst , int argc, JS
     } else 
     {
         return JS_ThrowReferenceError(ctx, "set_model_texture: model [%d] not found",modelIndex);
+    }
+  
+    
+    return JS_NULL;
+}
+
+static JSValue js_scale_model_texture_coords (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 4)
+    {
+        return JS_ThrowReferenceError(ctx, "scale_model_texture_coords: Wrong number of arguments(modelIndex,layer, x,y)");
+    }
+    int modelIndex, textureIndex;
+    double x,y;
+    JS_ToInt32(ctx, &modelIndex,argv[0]);
+    JS_ToInt32(ctx, &textureIndex,argv[1]);
+
+    JS_ToFloat64(ctx, &x,argv[2]);
+    JS_ToFloat64(ctx, &y,argv[3]);
+    
+
+    Model *model = Scene::Instance().GetModel(modelIndex);
+    if (model)
+    {
+        Mat4 scale = Mat4::Scale(x,y,1);
+        model->TransformTextureByLayer(textureIndex,scale);       
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "scale_model_texture_coords: model [%d] not found",modelIndex);
     }
   
     
@@ -2584,6 +2901,7 @@ static JSValue js_model_update_smoth_normals (JSContext *ctx, JSValueConst , int
     return JS_NULL;
 }
 
+
 //*************************************************************************************************
 //          LIGHT
 //*************************************************************************************************
@@ -2649,6 +2967,24 @@ static JSValue js_set_enbale_3d(JSContext *ctx, JSValueConst , int argc, JSValue
 
     return JS_NULL;
 }
+
+static JSValue js_set_clear_color(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 3)
+    {
+        return JS_ThrowReferenceError(ctx, "set_clear_color: Wrong number of arguments(r, g, b)");
+    }
+    
+    int r,g,b;
+    JS_ToInt32(ctx, &r,argv[0]);
+    JS_ToInt32(ctx, &g,argv[1]);
+    JS_ToInt32(ctx, &b,argv[2]);
+    Scene::Instance().SetClearColor(r,g,b);
+
+    
+
+    return JS_NULL;
+}
 static JSValue js_set_enbale_2d(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 1)
@@ -2663,6 +2999,33 @@ static JSValue js_set_enbale_2d(JSContext *ctx, JSValueConst , int argc, JSValue
 
 }
 
+static JSValue js_get_total_nodes(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    
+    int total = Scene::Instance().GetNodeCount();
+    JSValue result = JS_NewInt32(ctx, total);
+    return result;
+}
+static JSValue js_get_total_models(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    
+    int total = Scene::Instance().GetModelCount();
+    JSValue result = JS_NewInt32(ctx, total);
+    return result;
+}
+
+static JSValue js_get_total_entityes(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    
+    int total = Scene::Instance().GetEntityCount();
+    JSValue result = JS_NewInt32(ctx, total);
+    return result;
+
+}
+
+
+
+
 using JSFunctionMap = std::map<std::string, JSValue(*)(JSContext*, JSValueConst, int, JSValueConst*)>;
 
 
@@ -2670,10 +3033,16 @@ JSFunctionMap sceneFunctions =
 {
     {"enable_3d", js_set_enbale_3d},
     {"enable_2d", js_set_enbale_2d},
+    {"set_clear_color", js_set_clear_color},
     {"load_entity", js_scene_load_entity},
     {"load_model", js_scene_load_model},
+    {"get_model_size", js_scene_get_model_size},
     
     {"create_static_node", js_scene_load_static_node},
+
+    {"get_total_nodes", js_get_total_nodes},
+    {"get_total_models", js_get_total_models},
+    {"get_total_entityes", js_get_total_entityes},
 
     {"remove_model", js_scene_remove_model},
     {"remove_entity", js_scene_remove_entity},
@@ -2687,9 +3056,15 @@ JSFunctionMap sceneFunctions =
 
     {"entity_add_animation", js_entity_add_animation},
     {"entity_play", js_entity_play_animation},
+    {"entity_stop", js_entity_stop},
+    {"entity_is_ended", js_entity_is_ended},
+    {"get_entity_frame", js_entity_frame},
+    {"get_entity_animation_name", js_entity_animation_name},
+
 
     {"set_model_texture", js_set_model_texture},
     {"set_model_culling", js_set_model_culling},
+    {"scale_model_texture_coords", js_scale_model_texture_coords},
 
 
 
@@ -2703,11 +3078,17 @@ JSFunctionMap sceneFunctions =
     {"set_node_position", js_set_node_postion},
     {"set_node_rotation", js_set_node_rotation},
     {"set_node_scale", js_set_node_scale},
+    {"set_node_visible", js_set_node_visible},
 
     {"set_model_postion", js_set_model_position},
     {"set_model_rotation", js_set_model_rotate},
     {"set_model_scale", js_set_model_scale},
     {"set_model_name", js_set_model_name},
+
+    {"get_entity_id", js_scene_get_entity_id},
+    {"get_model_id", js_scene_get_model_id},
+    {"get_node_id", js_scene_get_node_id},
+
     
 
 
@@ -2857,18 +3238,25 @@ static JSValue js_canvas_grid (JSContext *ctx, JSValueConst , int argc, JSValueC
 
 static JSValue js_canvas_cube (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
-    if (argc != 6)
+    if (argc != 6 && argc != 7)
     {
         return JS_ThrowReferenceError(ctx, "cube: Wrong number of arguments(x, y, z, width, height, depth, whire)");
     }
     double x,y,z,width,height,depth;
-    bool wire = JS_ToBool(ctx, argv[6]);
-    JS_ToFloat64(ctx, &x,argv[0]);
+    
+        bool wire = true;
+    JS_ToFloat64(ctx, &x, argv[0]);
     JS_ToFloat64(ctx, &y,argv[1]);
     JS_ToFloat64(ctx, &z,argv[2]);
     JS_ToFloat64(ctx, &width,argv[3]);
     JS_ToFloat64(ctx, &height,argv[4]);
     JS_ToFloat64(ctx, &depth,argv[5]);
+
+    if (argc == 7)
+    {
+        wire = JS_ToBool(ctx, argv[6]);
+    }
+
     Vec3 pos(x,y,z);
     Scene::Instance().GetRenderBatch().Cube(pos,width,height,depth,wire);
     return JS_NULL;
@@ -3034,6 +3422,46 @@ static JSValue js_canvas_set_font (JSContext *ctx, JSValueConst , int argc, JSVa
     return JS_NULL;
 }
 
+static JSValue js_canvas_set_font_size (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "set_font_size: Wrong number of arguments(value)");
+    }
+    double value;
+    JS_ToFloat64(ctx, &value,argv[0]);
+    Scene::Instance().GetFont()->SetFontSize(value);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_font_clip (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "clip_font: Wrong number of arguments(value)");
+    }
+    bool clip= JS_ToBool(ctx, argv[0]);
+
+    Scene::Instance().GetFont()->EnableClip(clip);
+    return JS_NULL;
+}
+
+static JSValue js_canvas_set_font_clip (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 4)
+    {
+        return JS_ThrowReferenceError(ctx, "set_font_clip: Wrong number of arguments(x,y,width,height)");
+    }
+    int x,y,width,height;
+    JS_ToInt32(ctx, &x,argv[0]);
+    JS_ToInt32(ctx, &y,argv[1]);
+    JS_ToInt32(ctx, &width,argv[2]);
+    JS_ToInt32(ctx, &height,argv[3]);
+    
+    Scene::Instance().GetFont()->SetClip(x,y,width,height);
+    return JS_NULL;
+}
+
 static JSValue js_canvas_load_font (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 1)
@@ -3087,6 +3515,9 @@ JSFunctionMap canvasFunctions =
     {"print", js_canvas_print},
     {"set_font", js_canvas_set_font},
     {"load_font", js_canvas_load_font},
+    {"set_font_size", js_canvas_set_font_size},
+    {"font_clip", js_canvas_font_clip},
+    {"set_font_clip", js_canvas_set_font_clip},
 
 
 };

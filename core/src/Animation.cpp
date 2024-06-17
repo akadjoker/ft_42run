@@ -362,7 +362,7 @@ void Animator::updateTrans(float blend)
         Frame *frame = currentAnimation->GetFrame(i);
         if (frame)
         {
-             if (frame->pos && !frame->IgnorePosition) joint->setLocalPosition( Vec3::Lerp(frame->src_pos,frame->dest_pos,blend) );
+            if (frame->pos && !frame->IgnorePosition) joint->setLocalPosition( Vec3::Lerp(frame->src_pos,frame->dest_pos,blend) );
         
             if (frame->rot && !frame->IgnoreRotation)   joint->setLocalRotation( Quaternion::Slerp(frame->src_rot,frame->dest_rot,blend) );
         }
@@ -440,6 +440,34 @@ void Animator::updateAnim(float elapsed)
     
         return true;
     }
+
+void Animator::Stop()
+{
+
+    if (currentAnimation)
+    {
+        currentAnimation->Stop();
+    }
+}
+bool Animator::IsEnded() 
+{
+
+    if (currentAnimation)
+    {
+        return currentAnimation->IsEnded();
+    }
+    return true;
+
+}
+bool Animator::IsPlaying()
+{
+
+    if (currentAnimation)
+    {
+        return currentAnimation->state == Animation::Playing;
+    }
+    return false;
+}
 
 
 void Animator::SetIgnorePosition(const std::string &name, bool ignore)
