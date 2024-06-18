@@ -279,6 +279,128 @@ class MenuScreen extends Screen
       
 }
 
+class Obstacle extends Entity
+{
+  
+    selfX = 0;
+    selfZ = 0;  
+    scale = null;
+  
+    load()
+    {
+        //  console.log("create object  " + this.name+ " " + this.node);
+        this.scaleFactor = 1.0;
+        this.scaleDuration = 0.6;
+        this.dead = false;
+        
+    }
+    render()
+    {
+        this.collider.render();
+    }
+    update(dt)
+    {
+    
+
+
+        if (this.dead)
+        {
+            
+                    this.scale.x -= dt / this.scaleDuration;
+                    //this.scale.y -= dt / this.scaleDuration;
+                    this.scale.z -= dt / this.scaleDuration;
+                    this.scaleFactor -= dt / this.scaleDuration;
+                    if (this.scaleFactor <= 0.05 || this.scale.x <= 0.05 || this.scale.z <= 0.05)
+                        this.kill();
+            
+                    if (this.name === 'vending')
+                    {
+                        this.position.y -= dt / this.scaleDuration;
+                        scene.set_node_position(this.node, this.position.x, this.position.y+1.80, this.position.z);
+                    }
+    
+    
+                    scene.set_node_scale(this.node,this.scale.x, this.scale.y, this.scale.z);
+                
+            return;
+        }
+        this.selfX = this.position.x;
+        this.selfZ = this.position.z;
+        let distance = Distance(this.selfX, PlayerX);
+        let aline    = AbsDistance(this.selfZ , PlayerZ);
+    
+        if (distance > -15.0 )
+        {
+
+            let player = this.game.GetById('player');
+            if (player != null)
+            {
+                player.set_close(distance, this.name, aline);    
+            }
+            
+        }
+      //  console.log("distance " + distance);
+      //  scene.set_node_position(this.node, this.position.x, this.position.y, this.position.z);
+    }
+
+    hit()
+    {
+        this.dead = true;
+        this.collide = false;
+        this.scale = scene.get_node_scale(this.node);
+    }
+}
+
+class Coin extends Entity
+{
+  
+ 
+  
+    scale = null;
+  
+    load()
+    {
+        //  console.log("create object  " + this.name+ " " + this.node);
+        this.scaleFactor = 1.0;
+        this.scaleDuration = 0.8;
+        this.dead = false;
+        
+
+        this.angle = 0;
+        
+    }
+    render()
+    {
+        this.collider.render();
+    }
+    update(dt)
+    {
+            if (this.dead)
+            {
+                this.scale.x -= dt / this.scaleDuration;
+                //this.scale.y -= dt / this.scaleDuration;
+                this.scale.z -= dt / this.scaleDuration;
+                this.scaleFactor -= dt / this.scaleDuration;
+                if (this.scaleFactor <= 0.05 || this.scale.x <= 0.05 || this.scale.z <= 0.05)
+                    this.kill();
+
+
+                scene.set_node_scale(this.node,this.scale.x, this.scale.y, this.scale.z);
+                return;
+            }
+        this.angle += 10.5 * (dt * 25.0);
+        scene.set_node_rotation(this.node, 0,this.angle,90);    
+      
+      //  scene.set_node_position(this.node, this.position.x, this.position.y, this.position.z);
+    }
+    hit()
+    {
+        this.dead = true;
+        this.collide = false;
+        this.scale = scene.get_node_scale(this.node);
+
+    }
+}
 
 class Player extends Entity
 {
@@ -342,6 +464,16 @@ class Player extends Entity
         {
             this.distance += dt * 100;
 
+            if (keyboard.down(Key.A) && this.OnGround)
+                {
+                    this.Velocity.z -= this.SideSpeed * dt;
+                } else
+                    if (keyboard.down(Key.D) && this.OnGround)
+                    {
+                        this.Velocity.z += this.SideSpeed * dt;
+                    }
+            
+
            // console.log(this.next_distance + " " + this.next_type + " " + this.next_aline);
             
             if (this.next_type === "mesa" && (this.next_distance>=-8.0 && this.next_distance<=0.5) && this.next_aline<=3.0)
@@ -360,9 +492,9 @@ class Player extends Entity
                 this.jump_type = 3;
             }
 
-            if (keyboard.pressed(Key.SPACE))
+            if (keyboard.pressed(Key.SPACE) )
             {
-                if (this.OnGround)
+                if (this.OnGround && this.mode !== 1)
                 {
                     // console.log(this.next_distance + " " + this.next_type);
                     if (this.jump_type === 0)
@@ -397,14 +529,7 @@ class Player extends Entity
                 }
             }
 
-            if (keyboard.down(Key.A))
-            {
-                this.Velocity.z -= this.SideSpeed * dt;
-            } else
-                if (keyboard.down(Key.D))
-                {
-                    this.Velocity.z += this.SideSpeed * dt;
-                }
+            
             
             this.Velocity.z *= this.Friction;
         
@@ -571,7 +696,7 @@ class Player extends Entity
             camera.set_position(this.position.x - 16, 5.2, Clamp(Lerp(this.position.z, 0, dt * 2.5), -2.5, 2.0));
         }
 
-        scene.set_entity_position(this.node, this.position.x, this.position.y, this.position.z);
+        scene.set_entity_position(PlayerID, this.position.x, this.position.y, this.position.z);
     }
     render()
     {
@@ -588,8 +713,8 @@ class Player extends Entity
 
     hit()
     {
-        if (!this.OnGround || this.IsJumping)
-            return;
+        ////if (!this.OnGround || this.IsJumping)
+         //   return;
        // this.position.y -= 1.0;
         //this.Velocity.y = 14.0 ;
         this.mode = 1;
@@ -599,7 +724,7 @@ class Player extends Entity
         this.animation = "hit";
     }
 
-    collide(entity)
+    OnCollide(entity)
     {
 
         // let last_x = entity.position.x - 4.0;
@@ -613,53 +738,55 @@ class Player extends Entity
         {
             do_hit = true;
         } 
+        if (this.jump_type===3) 
+        {
+            do_hit = true;
+        }
+     
 
-       // console.log("diff " + diff +" "+this.animation);
+      //  console.log("diff " + diff +" "+this.animation+" "+this.jump_type+" :"+do_hit);
 
        // console.log("collide" + entity.name);
         if (entity.name==='moeda')
         {
             doPulse = true;
-            entity.kill();
+            entity.hit();
             Points += 1;
         } else  //['moeda', 'vending', 'mesa', 'cadeira','imac'];
         if (entity.name==='vending')
         {
             this.hitt_force = 7.0;
             this.hit();
-            entity.kill();
+            entity.hit();
         }
         if (entity.name==='mesa')
         {
          
-            if (this.OnGround || !this.IsJumping)
-            {
+           
                 this.hitt_force = 6.0;
                 if (do_hit)
                     this.hit();
-            }
             
-            entity.kill();
+            
+            entity.hit();
         }
         if (entity.name==='cadeira')
         {
-            if (this.OnGround || !this.IsJumping || this.jump_type !== 2)
-            {
+           
                 this.hitt_force = 4.0;
-                if (do_hit)
+                if (do_hit && this.jump_type !== 2)
                     this.hit();
-            }
-            entity.kill();
+            
+            entity.hit();
         }
         if (entity.name==='imac')
         {
-            if (this.OnGround || !this.IsJumping)
-            {
+           
                 this.hitt_force = 4.0;
                 if (do_hit)
                     this.hit();
-            }
-            entity.kill();
+            
+            entity.hit();
         }
         
     }
@@ -735,66 +862,6 @@ class LightBlink  extends Light
     }
     
    
-}
-class Obstacle extends Entity
-{
-  
-    selfX = 0;
-    selfZ = 0;
-  
-    load()
-    {
-      //  console.log("create object  " + this.name+ " " + this.node);
-        
-    }
-    render()
-    {
-        this.collider.render();
-    }
-    update(dt)
-    {
-        this.selfX = this.position.x;
-        this.selfZ = this.position.z;
-        let distance = Distance(this.selfX, PlayerX);
-        let aline    = AbsDistance(this.selfZ , PlayerZ);
-    
-        if (distance > -15.0 )
-        {
-
-            let player = this.game.GetById('player');
-            if (player != null)
-            {
-                player.set_close(distance, this.name, aline);    
-            }
-            
-        }
-      //  console.log("distance " + distance);
-      //  scene.set_node_position(this.node, this.position.x, this.position.y, this.position.z);
-    }
-}
-
-class Coin extends Entity
-{
-  
- 
-  
-    load()
-    {
-      //  console.log("create object " + this.name);
-        this.angle = 0;
-        
-    }
-    render()
-    {
-        this.collider.render();
-    }
-    update(dt)
-    {
-        this.angle += 10.5 * (dt * 25.0);
-        scene.set_node_rotation(this.node, 0,this.angle,90);    
-      
-      //  scene.set_node_position(this.node, this.position.x, this.position.y, this.position.z);
-    }
 }
 
 class GameScreen extends Screen
@@ -1131,11 +1198,13 @@ class GameScreen extends Screen
             }
             
             this.removeOldObjects();
+
+  
             this.game.update(dt);
             PlayerX = this.player.position.x;
             PlayerZ = this.player.position.z;
- 
             this.game.collide(this.player);
+
 
             for (let i = 0; i < this.lights.length; i++)
             {
@@ -1224,7 +1293,7 @@ class GameScreen extends Screen
         {
             let object = new Coin();
             object.node = scene.create_static_node(type, true);
-           
+            
             object.position.set(position, y+3, z);
             object.collider = new SphereColider(position, y + 2, z, 0.5);
             //object.collider = new BoxColider(position, y+1.5, z-0.7, 0.4, 1.0, 1.5);
@@ -1249,6 +1318,7 @@ class GameScreen extends Screen
             object.position.set(position, y, z);
             object.collider = new BoxColider(position-1.2, y, z-1.2, 2.4, 4.0, 2.4);
             object.name = 'vending';
+            object.scaleValue = 1.4;
             scene.node_add_model(object.node, VendingID);
             scene.set_node_rotation(object.node, 90, -90, 0);
             scene.set_node_scale(object.node, 1.3, 1.4, 1.4);

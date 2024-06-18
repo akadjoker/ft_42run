@@ -160,6 +160,10 @@ class CORE_PUBLIC Node
     {
         return position;
     }
+    Vec3 getLocalScale()
+    {
+        return scale;
+    }
 
     Quaternion getLocalRotation()
     {

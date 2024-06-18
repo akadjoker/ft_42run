@@ -1,6 +1,7 @@
 include("assets/scripts/utils.js");
 include("assets/scripts/game.js");
 
+
 console.log("Starting...****************************");
 var PlayerID = 0;
 var FloorID = 0;
@@ -40,11 +41,7 @@ function load()
   
     core.set_key_exit(Key.F2);
     
-    // let model = scene.create_cube(1, 1, 1);
-    // let node = scene.create_static_node("cube", false); 
 
-    // scene.set_node_postion(node, 0, 1, 1);
-    // scene.node_add_model(node, model);
 
     assets.set_texture_path("assets/");
     assets.set_texture_load_flip(true);
@@ -145,32 +142,7 @@ function load()
     scene.set_model_culling(EscolaID, 3, false);
    // scene.scale_model_texture_coords(EscolaID, 1, 10.0, 10.0);
 
-
-    // let node = scene.create_static_node("chair", true);
-    // scene.set_node_position(node, 10, 0, 0);
-    // scene.node_add_model(node, ChairID);
-    // scene.set_node_rotation(node, 90, 90, 0);
-    // scene.set_node_scale(node, 0.2, 0.2, 0.2);
-
-
-    // node = scene.create_static_node("table", true);
-    // scene.set_node_position(node, 10, 0, 0);
-    // scene.node_add_model(node, TableID);
-    // scene.set_node_rotation(node, 90, 90, 0);
-    // scene.set_node_scale(node, 0.3, 0.3, 0.3);
-
-    // node = scene.create_static_node("mac", true);
-    // scene.set_node_position(node, 10, 0, 0);
-    // scene.node_add_model(node, MacID);
-    // scene.set_node_rotation(node, 90, 90, 0);
-    // scene.set_node_scale(node, 0.35, 0.35, 0.35);
-
-
-    // node = scene.create_static_node("vending", true);
-    // scene.set_node_position(node, 10,2, 0);
-    // scene.node_add_model(node, VendingID);
-    // scene.set_node_rotation(node, 90, 90, 0);
-    // scene.set_node_scale(node, 1.2, 1.25, 1.2);
+;
 
     NodeEscolaA = scene.create_static_node("escolaA", false);
     escolaAPosition= new Vec3 (70, 0, 8);
@@ -236,7 +208,7 @@ function load()
    screens.add(new MenuScreen("menu"));
    screens.add(new GameScreen("game"));
 
-   screens.setScreen("menu");    
+   screens.setScreen("game");    
 
 
 

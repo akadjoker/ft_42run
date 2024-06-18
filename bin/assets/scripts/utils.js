@@ -822,6 +822,7 @@ class Entity
         this.isReady = false;
         this.game = null;
         this.node = -1;
+        this.entity = -1;
         this.name = "";
         this.done = false;
         this.visible = true;
@@ -829,11 +830,13 @@ class Entity
         this.rotation = new Vec3(0, 0, 0);
         this.position = new Vec3(0, 0, 0);
         this.collider = null;
+        this.collide = true;
     }
 
     kill()
     {
         this.done = true;
+        this.collide = false;
         if (this.name === "player")
             return;
         if (this.node !=-1)
@@ -859,7 +862,7 @@ class Entity
     unload()
     {
     }
-    collide(other)
+    OnCollide(other)
     {
         
     }
@@ -900,7 +903,7 @@ class Game
             }
             this.entities[i].update(dt);
         }
-        this.collisions();
+        //this.collisions();
     }
 
     render()
@@ -977,16 +980,18 @@ class Game
         for (var i = 0; i < this.entities.length; i++)
         {
             let entity = this.entities[i];
-            if (entity===null) continue;
+            if (entity === null) continue;
+            if (entity.collide === false) continue;
             if (entity === main) continue;
-           if (entity.collider === null) continue;
+            if (entity.collider === null) continue;
+        
 
           //  console.log("collide " + main.name + " with " + entity.name);
             if (main.collider.intersect(entity.collider))
             {
                // console.log("collide " + main.name + " with " + entity.name);
-                  main.collide(entity);
-                  entity.collide(main);
+                  main.OnCollide(entity);
+                  entity.OnCollide(main);
                   this.OnCollide(main, entity);
             }
         

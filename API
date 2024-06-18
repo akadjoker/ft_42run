@@ -75,6 +75,9 @@ scene:
     set_node_postion      nodeIndex, x, y, z
     set_node_rotation     nodeIndex, x, y, z
     set_node_scale        nodeIndex, x, y, z
+    get_node_postion      nodeIndex,
+    get_node_rotation     nodeIndex, 
+    get_node_scale        nodeIndex, 
     set_node_visible      nodeIndex, visible
 
     set_model_texture     modelIndex, materialIndex, textureIndex

@@ -2519,6 +2519,80 @@ static JSValue js_scene_get_model_size(JSContext *ctx, JSValueConst , int argc, 
     }
     return JS_NULL;
 }
+
+static JSValue js_get_node_postion(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_position: Wrong number of arguments(nodeIndex)");
+    }
+    int nodeIndex;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    StaticNode *node = Scene::Instance().GetNode(nodeIndex);
+    if (node)
+    {
+        Vec3 p = node->getLocalPosition();
+        JSValue obj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, obj, "x", JS_NewFloat64(ctx, p.x));
+        JS_SetPropertyStr(ctx, obj, "y", JS_NewFloat64(ctx, p.y));
+        JS_SetPropertyStr(ctx, obj, "z", JS_NewFloat64(ctx, p.z));
+        return obj;
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_position: node[%d] not found",nodeIndex);
+    }
+    return JS_NULL;
+}
+static JSValue js_get_node_rotation(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_rotation: Wrong number of arguments(nodeIndex)");
+    }
+    int nodeIndex;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    StaticNode *node = Scene::Instance().GetNode(nodeIndex);
+    if (node)
+    {
+        Quaternion q = node->getLocalRotation();
+        Vec3 p= q.getEuler();
+        JSValue obj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, obj, "x", JS_NewFloat64(ctx, p.x));
+        JS_SetPropertyStr(ctx, obj, "y", JS_NewFloat64(ctx, p.y));
+        JS_SetPropertyStr(ctx, obj, "z", JS_NewFloat64(ctx, p.z));
+        return obj;
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_rotation: node[%d] not found",nodeIndex);
+    }
+    return JS_NULL;
+}
+static JSValue js_get_node_scale(JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
+{
+    if (argc != 1)
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_scale: Wrong number of arguments(nodeIndex)");
+    }
+    int nodeIndex;
+    JS_ToInt32(ctx, &nodeIndex,argv[0]);
+    StaticNode *node = Scene::Instance().GetNode(nodeIndex);
+    if (node)
+    {
+        Vec3 p = node->getLocalScale();
+        JSValue obj = JS_NewObject(ctx);
+        JS_SetPropertyStr(ctx, obj, "x", JS_NewFloat64(ctx, p.x));
+        JS_SetPropertyStr(ctx, obj, "y", JS_NewFloat64(ctx, p.y));
+        JS_SetPropertyStr(ctx, obj, "z", JS_NewFloat64(ctx, p.z));
+        return obj;
+    } else 
+    {
+        return JS_ThrowReferenceError(ctx, "get_node_scale: node[%d] not found",nodeIndex);
+    }
+    return JS_NULL;
+}
+
+
+
 static JSValue js_set_node_postion (JSContext *ctx, JSValueConst , int argc, JSValueConst *argv)
 {
     if (argc != 4)
@@ -3071,6 +3145,9 @@ JSFunctionMap sceneFunctions =
     {"set_node_position", js_set_node_postion},
     {"set_node_rotation", js_set_node_rotation},
     {"set_node_scale", js_set_node_scale},
+    {"get_node_position", js_get_node_postion},
+    {"get_node_rotation", js_get_node_rotation},
+    {"get_node_scale", js_get_node_scale},
     {"set_node_visible", js_set_node_visible},
 
     {"set_model_postion", js_set_model_position},

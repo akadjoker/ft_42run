@@ -655,6 +655,11 @@ public:
 		*this = pitch * roll * yaw;
 	}
 
+	Vec3 getEuler() const
+	{
+		return Vec3( atan2f( 2 * ( w * x + y * z ), 1 - 2 * ( x * x + y * y ) ), asinf( 2 * ( w * y - z * x ) ), atan2f( 2 * ( w * z + x * y ), 1 - 2 * ( y * y + z * z ) ) );
+	}
+
 	Quaternion Roll(float x)
 	{
 		return Quaternion( sinf( x * 0.5f ), 0, 0, cosf( x * 0.5f ) );

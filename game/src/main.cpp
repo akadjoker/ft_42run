@@ -29,18 +29,6 @@ int screenHeight = 720;
 
 
 
-// template<class _Rep, class _Period>
-// std::future<void> TimerAsync(std::chrono::duration<_Rep, _Period> duration, std::function<void()> callback)
-// {
-//     return std::async(std::launch::async, [duration, callback]()
-//     {
-        
-//             std::this_thread::sleep_for(duration);
-//             callback();
-
-//     });
-// }
-
 
 std::condition_variable cv;
 std::mutex cv_m;
@@ -131,28 +119,7 @@ inline void RegisterGlobalFunctions(JSContext* ctx, JSValue global_obj)
 int main()
 {
 
-    // std::cout<<"Timer Start" << std::endl;
-    // auto future = TimerAsync(std::chrono::seconds(0), [&]()
-    // {
-    //     std::cout<<"Timer async" << std::endl;
-    
-    // });
-
-    // while (true)
-    // {
-    //    // std::cout<<"processing" << std::endl;
-     
-    //     auto status = future.wait_for(std::chrono::seconds(0));
-    //     if (status == std::future_status::ready)
-    //     {
-    //               std::cout<<"Timer break" << std::endl;
-    //         break;
-    //     }
-    // }
-//       std::cout<<"Timer Finished" << std::endl;
-
-//     return 0;
-// }
+   
 
     Device device;
     Driver driver;
@@ -163,17 +130,6 @@ int main()
 
 
 
-
-
-    //Camera camera(Vec3(-20.0f, 10.0f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
-    //Camera camera(Vec3(0.0f, 0.5f, 0.0f), Vec3(0.0f, 0.0f, -1.0f));
-    // float lastX = screenWidth / 2.0f;
-    // float lastY = screenHeight / 2.0f;
-    // bool firstMouse = true;
-   // bool followCameraMode = false;
-
-    // FollowCamera followCamera(Vec3(0.0f, 8.0f, -8.0f), 0.99f);
-    //FixCamera followCamera(Vec3(0.0f, 1.0f, -5.0f));
 
 
 
@@ -383,71 +339,6 @@ int main()
         }
         
 
-        
-
-                //  int xposIn, yposIn;
-                //  u32 IsMouseDown = SDL_GetMouseState(&xposIn, &yposIn);
-                //   if ( IsMouseDown & SDL_BUTTON(SDL_BUTTON_LEFT) )
-                //   {
-                //           float xpos = static_cast<float>(xposIn);
-                //           float ypos = static_cast<float>(yposIn);
-
-                //           if (firstMouse)
-                //           {
-                //               lastX = xpos;
-                //               lastY = ypos;
-                //               firstMouse = false;
-                //           }
-
-                //           float xoffset = xpos - lastX;
-                //           float yoffset = lastY - ypos; 
-
-                //           lastX = xpos;
-                //           lastY = ypos;
-
-                //        scene.GetCamera().ProcessMouseMovement(xoffset, yoffset);
-                //   }
-                //   else
-                //   {
-                //       firstMouse = true;
-                //   }
-
-    
-        
-        // if (Keyboard::Down(KEY_W))
-        // {
-        //     camera.ProcessKeyboard(FORWARD, deltaTime);
-         
-        //  } 
-        //  if (Keyboard::Down(KEY_S))
-        //  {
-        //      camera.ProcessKeyboard(BACKWARD, deltaTime);
-
-        //  }
-        //  if (Keyboard::Down(KEY_A))
-        //  {
-		// 	 camera.ProcessKeyboard(LEFT, deltaTime);
-
-		//  }
-    
-        //  if (Keyboard::Down(KEY_D))
-        //  {
-        //      camera.ProcessKeyboard(RIGHT, deltaTime);
-
-        //  }
-
-
-
-
-
-        // Driver::Instance().SetBlend(true);
-        // Driver::Instance().SetBlendMode(BlendMode::BLEND);
-        // Driver::Instance().SetDepthTest(true);
-        // Driver::Instance().SetDepthClamp(true);
-        // Driver::Instance().SetCullFace(true);
-        // Driver::Instance().SetClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        // Driver::Instance().Clear();
-        
 
 
       
