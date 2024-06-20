@@ -208,7 +208,7 @@ function load()
    screens.add(new MenuScreen("menu"));
    screens.add(new GameScreen("game"));
 
-   screens.setScreen("game");    
+   screens.setScreen("menu");    
 
 
 
